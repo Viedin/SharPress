@@ -49,7 +49,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Markdig" Version="1.4.0" />
+    <!-- Markdig is an implementation detail: keep it off consumers' compile references so it can't clash with
+         their own Markdig or Markdig.Signed (same types, different assembly). It still flows at runtime. -->
+    <PackageReference Include="Markdig" Version="1.4.0" PrivateAssets="compile;contentfiles;analyzers;build" />
   </ItemGroup>
 
   <!-- The starter files copied into a new site's SharpLib folder. Edit them in Templates/. -->
