@@ -275,9 +275,9 @@ a {
 :root[data-theme="dark"] .sp-theme-toggle .bi-sun-fill { display: inline; }
 :root[data-theme="dark"] .sp-theme-toggle .bi-moon-stars-fill { display: none; }
 
-.sp-nav a.sp-nav-home {
+.sp-nav .sp-nav-home {
     margin-bottom: 20px;
-    padding-left: 8px;
+    padding: 6px 8px;
     color: var(--sp-brand);
     font-size: 1.125rem;
     font-weight: 700;
@@ -423,7 +423,7 @@ a {
     text-decoration: none;
 }
 
-.sp-nav a.sp-nav-home { display: flex; align-items: center; gap: 10px; }
+.sp-nav .sp-nav-home { display: flex; align-items: center; gap: 10px; }
 .sp-nav-logo { width: 28px; height: 28px; object-fit: contain; }
 
 .sp-hero-image { display: block; max-width: 160px; max-height: 160px; margin: 0 auto 24px; }

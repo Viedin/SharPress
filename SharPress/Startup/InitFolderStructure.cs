@@ -23,24 +23,27 @@ internal static class InitFolderStructure
     /// folder with a logo, favicon and custom.css. Nothing that already exists is touched.
     /// </summary>
     /// <remarks>
-    /// Top-level files such as the home page and the settings are recreated if they are missing. The starter
-    /// files inside a folder (docs, static) are only created when the folder itself doesn't exist yet,
-    /// so a page or image you deleted on purpose doesn't come back.
+    /// The settings file is recreated if it is missing. The home page is only created along with it: deleting the
+    /// home page alone makes a docs-only site, so it must not come back, but the starter settings have a "home"
+    /// section that expects it. Likewise the starter files inside a folder (docs, static) are only created when
+    /// the folder itself doesn't exist yet, so a page or image you deleted on purpose doesn't come back.
     /// </remarks>
     public static void Run(SiteFolders folders)
     {
+        // Not whether the root folder exists: it may already be there on the first run, e.g. as a mounted volume.
+        var isNewSite = !File.Exists(folders.SettingsFile);
         Directory.CreateDirectory(folders.Root);
 
         if (folders.Options.CreateStarterFiles)
         {
-            CopyTemplates(folders);
+            CopyTemplates(folders, isNewSite);
         }
 
         // The static folder is served as-is, so it has to exist even if there is nothing in it.
         Directory.CreateDirectory(folders.Static);
     }
 
-    private static void CopyTemplates(SiteFolders folders)
+    private static void CopyTemplates(SiteFolders folders, bool isNewSite)
     {
         var assembly = typeof(InitFolderStructure).Assembly;
         var templates = assembly.GetManifestResourceNames()
@@ -60,7 +63,8 @@ internal static class InitFolderStructure
         {
             var folder = TopLevelFolder(relativePath);
             var destination = DestinationPath(folders, relativePath);
-            var shouldCreate = folder is null ? !File.Exists(destination) : newFolders.Contains(folder);
+            var shouldCreate = folder is not null ? newFolders.Contains(folder)
+                : !File.Exists(destination) && (isNewSite || relativePath != TemplateIndexFile);
             if (!shouldCreate)
             {
                 continue;
@@ -101,7 +105,7 @@ internal static class InitFolderStructure
             .Replace("{{IndexFile}}", Value(folders.Options.IndexFile))
             .Replace("{{SettingsFile}}", Value(folders.Options.SettingsFile))
             .Replace("{{CustomCssFile}}", Value(folders.Options.CustomCssFile))
-            .Replace("{{DocsUrl}}", Value(folders.DocsUrl));
+            .Replace("{{DocsPath}}", Value(folders.DocsPath));
     }
 
     private static string? TopLevelFolder(string templatePath)

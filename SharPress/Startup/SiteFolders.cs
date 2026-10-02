@@ -14,12 +14,8 @@ internal sealed class SiteFolders
         var baseUrl = Options.BaseUrl.Trim('/');
         BasePath = baseUrl.Length == 0 ? string.Empty : $"/{baseUrl}";
 
-        DocsUrl = Options.DocsUrl.Trim('/');
-        if (DocsUrl.Length == 0)
-        {
-            // An empty URL would put the docs route at the site root, where it would catch every request.
-            throw new InvalidOperationException($"{nameof(SharPressOptions)}.{nameof(SharPressOptions.DocsUrl)} must not be empty.");
-        }
+        var docsUrl = Options.DocsUrl.Trim('/');
+        DocsPath = docsUrl.Length == 0 ? string.Empty : $"/{docsUrl}";
 
         // Every path is normalized, so options such as "./public" compare equal to the paths they resolve to.
         // FindStaticFile relies on this: an unnormalized static folder would match no file, and with
@@ -40,8 +36,12 @@ internal sealed class SiteFolders
     /// </summary>
     public string BasePath { get; }
 
-    /// <summary>The part of the URL the docs pages are served under, without slashes, e.g. "docs" for /docs/getting-started.</summary>
-    public string DocsUrl { get; }
+    /// <summary>
+    /// The URL the docs pages are served under inside <see cref="BasePath"/> (<see cref="SharPressOptions.DocsUrl"/>),
+    /// with a leading slash and no trailing slash, e.g. "/docs" for /docs/getting-started; empty when the docs are
+    /// at the root of the site, next to the home page.
+    /// </summary>
+    public string DocsPath { get; }
 
     public string Root { get; }
 

@@ -17,7 +17,7 @@
     @if (Navigation is { Groups.Count: > 0 })
     {
         <aside class="sp-sidebar" id="sp-sidebar">
-            <DocsNav SiteTitle="@Navigation.SiteTitle" SiteLogo="@Navigation.SiteLogo" Title="@Navigation.Title" Groups="Navigation.Groups" />
+            <DocsNav SiteTitle="@Navigation.SiteTitle" SiteLogo="@Navigation.SiteLogo" Title="@Navigation.Title" HasHomePage="Navigation.HasHomePage" Groups="Navigation.Groups" />
         </aside>
     }
 

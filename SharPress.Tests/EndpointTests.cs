@@ -20,6 +20,54 @@ public class EndpointTests
     }
 
     [Fact]
+    public async Task Docs_only_site_redirects_the_root_and_does_not_link_home()
+    {
+        await using var site = await TestSite.StartAsync();
+        File.Delete(site.Folders.IndexFile);
+        site.WriteFile("sharpress.json", """{ "title": "My Docs" }""");
+
+        var root = await site.Client.GetAsync("/");
+        var docs = await site.Client.GetStringAsync("/docs/getting-started");
+
+        Assert.Equal(HttpStatusCode.Redirect, root.StatusCode);
+        Assert.Equal("/docs/getting-started", root.Headers.Location?.OriginalString);
+        Assert.Contains("<div class=\"sp-nav-home\">", docs);
+        Assert.DoesNotContain("class=\"sp-nav-home\" href", docs);
+    }
+
+    [Fact]
+    public async Task Docs_only_site_redirects_to_the_first_link_to_an_existing_page()
+    {
+        await using var site = await TestSite.StartAsync();
+        File.Delete(site.Folders.IndexFile);
+        site.WriteFile("sharpress.json", """
+            { "sidebar": [
+                { "text": "Home", "link": "/" },
+                { "text": "Elsewhere", "link": "//example.com/docs/getting-started" },
+                { "text": "Gone", "link": "/docs/missing" },
+                { "link": "/docs/writing-content" }
+            ] }
+            """);
+
+        var root = await site.Client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.Redirect, root.StatusCode);
+        Assert.Equal("/docs/writing-content", root.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
+    public async Task Docs_only_site_without_a_linked_page_returns_404_at_the_root()
+    {
+        await using var site = await TestSite.StartAsync();
+        File.Delete(site.Folders.IndexFile);
+        site.WriteFile("sharpress.json", """{ "sidebar": [ { "link": "/docs/missing" } ] }""");
+
+        var root = await site.Client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.NotFound, root.StatusCode);
+    }
+
+    [Fact]
     public async Task Missing_docs_page_returns_404_with_the_navigation()
     {
         await using var site = await TestSite.StartAsync();
@@ -43,6 +91,25 @@ public class EndpointTests
         // The starter settings were written with the configured URL, so the hero links work.
         var home = await site.Client.GetStringAsync("/");
         Assert.Contains("href=\"/guide/getting-started\"", home);
+    }
+
+    [Fact]
+    public async Task Empty_DocsUrl_serves_the_docs_next_to_the_home_page()
+    {
+        await using var site = await TestSite.StartAsync(options =>
+        {
+            options.BaseUrl = "/faq";
+            options.DocsUrl = "/";
+        });
+
+        var home = await site.Client.GetStringAsync("/faq");
+        var docs = await site.Client.GetStringAsync("/faq/getting-started");
+        var css = await site.Client.GetAsync("/faq/custom.css");
+
+        Assert.Contains("class=\"sp-hero\"", home);
+        Assert.Contains("<title>Getting started</title>", docs);
+        Assert.Contains("href=\"/faq/writing-content\"", docs);
+        Assert.Equal(HttpStatusCode.OK, css.StatusCode);
     }
 
     [Fact]

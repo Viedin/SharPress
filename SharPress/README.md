@@ -6,7 +6,7 @@ build step: edit a file, save, refresh.
 - Pages from Markdown, with tables, task lists, footnotes and code blocks
 - A sidebar you order yourself, plus previous and next links
 - An **On this page** outline that tracks where you are on the page
-- A home page with a hero and feature cards
+- An optional home page with a hero and feature cards
 - Light and dark themes, custom CSS, a logo and a favicon
 - Works on phones, under any URL, and behind your app's sign-in if you want
 
@@ -40,6 +40,10 @@ On first run SharPress creates a `SharpLib` folder in your project with a starte
 
 Edit a file, save, and refresh. There is no build step.
 
+Only want the docs? Delete `Index.md` and remove `home` from `sharpress.json`. The site then has no home
+page: `/` redirects to the first docs page and the site title in the sidebar isn't a link. SharPress
+doesn't recreate a deleted `Index.md`.
+
 ## Options
 
 Change where the site lives, and what its files are called, in `Program.cs`:
@@ -55,6 +59,10 @@ builder.AddSharPress(options =>
 
 `DocsUrl` changes the URL only. Links in `sharpress.json` must use the same URL, for example
 `"/guide/getting-started"`.
+
+Set `DocsUrl = "/"` to serve the docs from the root of the site, such as `/getting-started`. The docs then
+answer every URL that nothing else in your app matches, so if the app has pages of its own, also set
+`BaseUrl` (for example `/faq/getting-started`).
 
 | Option                 | Default          |
 | ---------------------- | ---------------- |

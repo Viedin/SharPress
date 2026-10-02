@@ -1,8 +1,11 @@
+using System.Collections.Concurrent;
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using SharPress.Startup;
 
 namespace SharPress.Services;
@@ -25,6 +28,16 @@ public sealed record NavGroup(string? Title, IReadOnlyList<NavItem> Items);
 /// <summary>The docs navigation: an optional label above the groups of links.</summary>
 public sealed record DocsNavigation(string? SiteTitle, string? SiteLogo, string? Title, IReadOnlyList<NavGroup> Groups)
 {
+    /// <summary>Whether the site has a home page, so the site title links to it.</summary>
+    public bool HasHomePage { get; init; }
+
+    /// <summary>
+    /// The first link in the navigation to a docs page that exists, or null if there is none. Links to the home
+    /// page, other sites or missing pages are skipped, so a docs-only site never redirects its root to itself or
+    /// to "Page not found".
+    /// </summary>
+    public NavItem? FirstPage { get; init; }
+
     /// <summary>
     /// Finds the pages before and after the given docs page, following the order of the navigation.
     /// Both are null if the page isn't in the navigation.
@@ -48,8 +61,18 @@ public sealed record DocsNavigation(string? SiteTitle, string? SiteLogo, string?
     }
 }
 
-internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsService settingsService)
+internal sealed class MarkdownPageService(
+    SiteFolders folders,
+    SiteSettingsService settingsService,
+    IHostEnvironment environment,
+    ILogger<MarkdownPageService> logger)
 {
+    /// <summary>
+    /// Sidebar links already warned about. The navigation is built on every request, so without this a broken
+    /// link would be logged on every page view.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, byte> _reportedMissingLinks = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Headings outside this level range (e.g. the h1 page title) are left out of the outline.</summary>
     private const int MinOutlineLevel = 2;
     private const int MaxOutlineLevel = 3;
@@ -70,6 +93,12 @@ internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsServi
         var path = folders.IndexFile;
         return File.Exists(path) ? await RenderFileAsync(path, pathBase, cancellationToken) : null;
     }
+
+    /// <summary>
+    /// Whether the site has a home page: the home page file or a "home" section in the settings. A docs-only site
+    /// has neither, and its root redirects to the first docs page.
+    /// </summary>
+    public bool HasHomePage(SiteSettings settings) => settings.Home is not null || File.Exists(folders.IndexFile);
 
     /// <summary>
     /// Renders a page from the docs folder. The slug is the file path relative to the docs folder without the
@@ -104,9 +133,13 @@ internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsServi
         if (settings.Sidebar.Count == 0)
         {
             var items = pageTitles
-                .Select(page => new NavItem(page.Value, $"/{folders.DocsUrl}/{page.Key}"))
+                .Select(page => new NavItem(page.Value, $"{folders.DocsPath}/{page.Key}"))
                 .ToList();
-            return new DocsNavigation(settings.Title, settings.Logo, settings.SidebarTitle, items.Count == 0 ? [] : [new NavGroup(null, items)]);
+            return new DocsNavigation(settings.Title, settings.Logo, settings.SidebarTitle, items.Count == 0 ? [] : [new NavGroup(null, items)])
+            {
+                HasHomePage = HasHomePage(settings),
+                FirstPage = items.FirstOrDefault(),
+            };
         }
 
         var groups = new List<NavGroup>();
@@ -132,7 +165,57 @@ internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsServi
             }
         }
 
-        return new DocsNavigation(settings.Title, settings.Logo, settings.SidebarTitle, groups);
+        return new DocsNavigation(settings.Title, settings.Logo, settings.SidebarTitle, groups)
+        {
+            HasHomePage = HasHomePage(settings),
+            FirstPage = groups
+                .SelectMany(group => group.Items)
+                .FirstOrDefault(item => DocsSlug(item.Href) is { } slug && pageTitles.ContainsKey(slug)),
+        };
+    }
+
+    /// <summary>
+    /// The docs page slug a site-root link points to, such as "getting-started" for "/docs/getting-started", or
+    /// null if the link isn't under the docs URL. Only says where the link points; the page may not exist.
+    /// </summary>
+    private string? DocsSlug(string href)
+    {
+        // "//host/path" is another site, not a page under the docs at the root.
+        if (href.StartsWith("//", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var docsPrefix = $"{folders.DocsPath}/";
+        if (!href.StartsWith(docsPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var slug = href[docsPrefix.Length..].ToLowerInvariant();
+        return slug.Length == 0 ? null : slug;
+    }
+
+    /// <summary>
+    /// Warns, once per link and only in development, about a sidebar link on this site that matches neither a docs
+    /// page nor a static file. The usual cause is changing <see cref="SharPressOptions.DocsUrl"/> after the
+    /// settings file was written: its links still use the old URL, and every page shows "Page not found". Any
+    /// site-root link is checked, not just those under the docs URL, so links left over from either side of the
+    /// change are caught. The home page ("/") and links with a query or fragment are left alone.
+    /// </summary>
+    private void WarnIfMissing(string href, string? slug, Dictionary<string, string> pageTitles)
+    {
+        var isSiteLink = href.StartsWith('/') && !href.StartsWith("//", StringComparison.Ordinal) && href != "/";
+        if (!environment.IsDevelopment() || !isSiteLink || (slug is not null && pageTitles.ContainsKey(slug))
+            || href.Contains('#') || href.Contains('?') || folders.FindStaticFile(folders.BasePath + href) is not null
+            || !_reportedMissingLinks.TryAdd(href, 0))
+        {
+            return;
+        }
+
+        logger.LogWarning(
+            "The sidebar link {Link} in {SettingsFile} doesn't match a page in {DocsFolder} or a file in {StaticFolder}. Docs pages are served under \"{DocsPath}/\" (SharPressOptions.DocsUrl).",
+            href, folders.Options.SettingsFile, folders.Options.DocsFolder, folders.Options.StaticFolder, folders.DocsPath);
     }
 
     private List<NavItem> ToNavItems(IEnumerable<SidebarItem> entries, Dictionary<string, string> pageTitles)
@@ -155,11 +238,12 @@ internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsServi
         var link = entry.Link;
         var href = link.StartsWith('/') || link.StartsWith('#') || link.Contains(':') ? link : $"/{link}";
 
+        var slug = DocsSlug(href);
+        WarnIfMissing(href, slug, pageTitles);
+
         var text = entry.Text;
         if (string.IsNullOrWhiteSpace(text))
         {
-            var docsPrefix = $"/{folders.DocsUrl}/";
-            var slug = href.StartsWith(docsPrefix, StringComparison.OrdinalIgnoreCase) ? href[docsPrefix.Length..].ToLowerInvariant() : null;
             text = slug is not null && pageTitles.TryGetValue(slug, out var title) ? title : href;
         }
 

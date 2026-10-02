@@ -6,13 +6,22 @@
 @if (Groups.Count > 0)
 {
     <nav class="sp-nav" aria-label="Documentation">
-        <a class="sp-nav-home" href="@Navigation.SiteUrl(Folders, "/")">
-            @if (!string.IsNullOrWhiteSpace(SiteLogo))
-            {
-                <img class="sp-nav-logo" src="@Navigation.SiteUrl(Folders, SiteLogo)" alt="" />
-            }
-            @(string.IsNullOrWhiteSpace(SiteTitle) ? "Home" : SiteTitle)
-        </a>
+        @* The site name links to the home page. A docs-only site has none, so the name is plain text there, and
+           without a title or logo nothing is shown rather than a "Home" link that would lead back to the docs. *@
+        @if (HasHomePage)
+        {
+            <a class="sp-nav-home" href="@Navigation.SiteUrl(Folders, "/")">
+                @LogoImage
+                @(string.IsNullOrWhiteSpace(SiteTitle) ? "Home" : SiteTitle)
+            </a>
+        }
+        else if (!string.IsNullOrWhiteSpace(SiteTitle) || !string.IsNullOrWhiteSpace(SiteLogo))
+        {
+            <div class="sp-nav-home">
+                @LogoImage
+                @SiteTitle
+            </div>
+        }
         @if (!string.IsNullOrWhiteSpace(Title))
         {
             <p class="sp-nav-title">@Title</p>
@@ -47,6 +56,17 @@
     [Parameter]
     public string? Title { get; set; }
 
+    /// <summary>Whether the site has a home page for the site name to link to.</summary>
+    [Parameter]
+    public bool HasHomePage { get; set; }
+
     [Parameter]
     public IReadOnlyList<NavGroup> Groups { get; set; } = [];
+
+    private RenderFragment LogoImage => @<text>
+        @if (!string.IsNullOrWhiteSpace(SiteLogo))
+        {
+            <img class="sp-nav-logo" src="@Navigation.SiteUrl(Folders, SiteLogo)" alt="" />
+        }
+    </text>;
 }

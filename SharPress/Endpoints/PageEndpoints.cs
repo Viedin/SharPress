@@ -11,7 +11,7 @@ namespace SharPress.Endpoints;
 
 /// <summary>
 /// Maps the site's pages as minimal API endpoints that render Razor components. The routes are built at runtime,
-/// so the docs can be served under any URL (<see cref="SharPressOptions.DocsUrl"/>).
+/// so the docs can be served under any URL (<see cref="SharPressOptions.DocsUrl"/>), including the site root.
 /// </summary>
 internal static class PageEndpoints
 {
@@ -34,38 +34,69 @@ internal static class PageEndpoints
             }
         }
 
-        pages.MapGet("/", async Task<IResult> (HttpContext context, MarkdownPageService markdown, SiteSettingsService settings, CancellationToken cancellationToken) =>
-            new RazorComponentResult<Home>(new Dictionary<string, object?>
-            {
-                [nameof(Home.Page)] = await markdown.GetIndexPageAsync(SiteBase(context, folders), cancellationToken),
-                [nameof(Home.Settings)] = (await settings.GetAsync(cancellationToken)).Home,
-            }));
-
-        pages.MapGet($"/{folders.DocsUrl}/{{*slug}}", async Task<IResult> (string? slug, HttpContext context, MarkdownPageService markdown, CancellationToken cancellationToken) =>
+        if (folders.DocsPath.Length == 0)
         {
-            // UseStaticFiles skips requests that matched an endpoint, so a file in the static folder under the
-            // docs URL (e.g. public/docs/images/diagram.png) would otherwise get "Page not found".
-            if (FindStaticFile(folders, context.Request.Path) is { } file)
-            {
-                return file;
-            }
+            // The docs are at the root of the site, so the docs route also matches the root. A separate "/" route
+            // would compete with it; the docs route renders the home page itself when there is no slug.
+            pages.MapGet("/{*slug}", (string? slug, HttpContext context, MarkdownPageService markdown, SiteSettingsService settings, CancellationToken cancellationToken) =>
+                string.IsNullOrEmpty(slug)
+                    ? HomeAsync(context, folders, markdown, settings, cancellationToken)
+                    : DocsAsync(slug, context, folders, markdown, cancellationToken));
+        }
+        else
+        {
+            pages.MapGet("/", (HttpContext context, MarkdownPageService markdown, SiteSettingsService settings, CancellationToken cancellationToken) =>
+                HomeAsync(context, folders, markdown, settings, cancellationToken));
+            pages.MapGet($"{folders.DocsPath}/{{*slug}}", (string? slug, HttpContext context, MarkdownPageService markdown, CancellationToken cancellationToken) =>
+                DocsAsync(slug, context, folders, markdown, cancellationToken));
+        }
+    }
 
-            var page = await markdown.GetDocsPageAsync(slug, SiteBase(context, folders), cancellationToken);
+    private static async Task<IResult> HomeAsync(HttpContext context, SiteFolders folders, MarkdownPageService markdown, SiteSettingsService settingsService, CancellationToken cancellationToken)
+    {
+        var settings = await settingsService.GetAsync(cancellationToken);
+
+        // A docs-only site has no home page file and no "home" section, so the root goes to the first docs
+        // page instead of an empty page. The redirect is temporary: adding a home page later takes it back.
+        if (!markdown.HasHomePage(settings))
+        {
             var navigation = await markdown.GetDocsNavigationAsync(cancellationToken);
-            var (previous, next) = navigation.GetNeighbours($"/{folders.DocsUrl}/{slug}");
+            return navigation.FirstPage is { } first
+                ? TypedResults.Redirect(SiteBase(context, folders) + first.Href)
+                : TypedResults.NotFound();
+        }
 
-            return new RazorComponentResult<Docs>(new Dictionary<string, object?>
-            {
-                [nameof(Docs.Page)] = page,
-                [nameof(Docs.Navigation)] = navigation,
-                [nameof(Docs.Previous)] = previous,
-                [nameof(Docs.Next)] = next,
-            })
-            {
-                // The page still renders "Page not found" with the navigation, but with the right status code.
-                StatusCode = page is null ? StatusCodes.Status404NotFound : null,
-            };
+        return new RazorComponentResult<Home>(new Dictionary<string, object?>
+        {
+            [nameof(Home.Page)] = await markdown.GetIndexPageAsync(SiteBase(context, folders), cancellationToken),
+            [nameof(Home.Settings)] = settings.Home,
         });
+    }
+
+    private static async Task<IResult> DocsAsync(string? slug, HttpContext context, SiteFolders folders, MarkdownPageService markdown, CancellationToken cancellationToken)
+    {
+        // UseStaticFiles skips requests that matched an endpoint, so a file in the static folder under the
+        // docs URL (e.g. public/docs/images/diagram.png) would otherwise get "Page not found".
+        if (FindStaticFile(folders, context.Request.Path) is { } file)
+        {
+            return file;
+        }
+
+        var page = await markdown.GetDocsPageAsync(slug, SiteBase(context, folders), cancellationToken);
+        var navigation = await markdown.GetDocsNavigationAsync(cancellationToken);
+        var (previous, next) = navigation.GetNeighbours($"{folders.DocsPath}/{slug}");
+
+        return new RazorComponentResult<Docs>(new Dictionary<string, object?>
+        {
+            [nameof(Docs.Page)] = page,
+            [nameof(Docs.Navigation)] = navigation,
+            [nameof(Docs.Previous)] = previous,
+            [nameof(Docs.Next)] = next,
+        })
+        {
+            // The page still renders "Page not found" with the navigation, but with the right status code.
+            StatusCode = page is null ? StatusCodes.Status404NotFound : null,
+        };
     }
 
     /// <summary>

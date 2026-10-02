@@ -6,9 +6,9 @@ Pages are Markdown files in `{{RootFolder}}/{{DocsFolder}}`.
 
 1. Create `{{RootFolder}}/{{DocsFolder}}/my-page.md`.
 2. Start it with a `#` heading. That is the page title.
-3. Open `/{{DocsUrl}}/my-page`.
+3. Open `{{DocsPath}}/my-page`.
 
-Subfolders work too: `{{DocsFolder}}/tutorials/setup.md` is served at `/{{DocsUrl}}/tutorials/setup`.
+Subfolders work too: `{{DocsFolder}}/tutorials/setup.md` is served at `{{DocsPath}}/tutorials/setup`.
 
 ## Add it to the navigation
 
@@ -21,9 +21,9 @@ A page that is not in the sidebar still works, but nobody can find it. List it i
     {
       "text": "Introduction",
       "items": [
-        { "link": "/{{DocsUrl}}/getting-started" },
-        { "link": "/{{DocsUrl}}/writing-content" },
-        { "link": "/{{DocsUrl}}/my-page" }
+        { "link": "{{DocsPath}}/getting-started" },
+        { "link": "{{DocsPath}}/writing-content" },
+        { "link": "{{DocsPath}}/my-page" }
       ]
     }
   ]

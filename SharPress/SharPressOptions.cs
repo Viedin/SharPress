@@ -42,6 +42,12 @@ public sealed class SharPressOptions
     /// The URL the docs pages are served under, inside <see cref="BaseUrl"/>, for example "guide" to serve
     /// getting-started.md at /guide/getting-started. It may have more than one segment, such as "guide/v2". Links
     /// in the settings file must use the same URL.
+    /// <para>
+    /// Empty (or "/") puts the docs at the root of the site, next to the home page: getting-started.md is then
+    /// served at /getting-started, or at /faq/getting-started with <see cref="BaseUrl"/> "faq". The docs then
+    /// answer every URL under <see cref="BaseUrl"/> that nothing else in the app matches, including files your
+    /// app serves with UseStaticFiles, so set <see cref="BaseUrl"/> when the app has pages of its own.
+    /// </para>
     /// </summary>
     public string DocsUrl { get; set; } = "docs";
 
@@ -51,7 +57,10 @@ public sealed class SharPressOptions
     /// </summary>
     public string StaticFolder { get; set; } = "public";
 
-    /// <summary>The home page, relative to <see cref="RootFolder"/>.</summary>
+    /// <summary>
+    /// The home page, relative to <see cref="RootFolder"/>. It is optional: without it and without a "home"
+    /// section in the settings, the site root redirects to the first docs page.
+    /// </summary>
     public string IndexFile { get; set; } = "Index.md";
 
     /// <summary>The site settings, relative to <see cref="RootFolder"/>.</summary>

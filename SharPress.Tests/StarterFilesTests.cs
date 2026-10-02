@@ -48,10 +48,34 @@ public class StarterFilesTests
     }
 
     [Fact]
-    public async Task Empty_DocsUrl_is_rejected()
+    public async Task Does_not_recreate_a_deleted_home_page()
     {
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => TestSite.StartAsync(options => options.DocsUrl = "/"));
+        await using var site = await TestSite.StartAsync();
+        File.Delete(site.Folders.IndexFile);
 
-        Assert.Contains("DocsUrl", exception.Message);
+        await using var second = await TestSite.StartAsync(options => options.RootFolder = site.Folders.Root);
+
+        Assert.False(File.Exists(site.Folders.IndexFile));
+    }
+
+    [Fact]
+    public async Task Creates_the_home_page_when_the_root_folder_already_exists()
+    {
+        // E.g. a mounted volume: the folder is there, but it's still the first run.
+        var root = Path.Combine(Path.GetTempPath(), "sharpress-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+
+        await using var site = await TestSite.StartAsync(options => options.RootFolder = root);
+
+        Assert.True(File.Exists(site.Folders.IndexFile));
+    }
+
+    [Fact]
+    public async Task Empty_DocsUrl_writes_root_links()
+    {
+        await using var site = await TestSite.StartAsync(options => options.DocsUrl = "/");
+
+        var settings = await site.GetService<SiteSettingsService>().GetAsync();
+        Assert.Equal("/getting-started", settings.Sidebar[0].Items[0].Link);
     }
 }

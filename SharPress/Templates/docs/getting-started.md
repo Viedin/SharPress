@@ -7,9 +7,9 @@ the app started.
 
 | Path | What it does |
 | ---- | ------------ |
-| `{{IndexFile}}` | The home page |
+| `{{IndexFile}}` | The home page. Delete it, and remove `home` from `{{SettingsFile}}`, for a docs-only site |
 | `{{SettingsFile}}` | The site name, the navigation, and the hero and cards on the home page |
-| `{{DocsFolder}}/` | One Markdown file per page, served under `/{{DocsUrl}}` |
+| `{{DocsFolder}}/` | One Markdown file per page, served under `{{DocsPath}}/` |
 | `{{StaticFolder}}/` | Your logo, favicon, images and `{{CustomCssFile}}`, served from the site root |
 
 ## Make it yours
@@ -32,4 +32,4 @@ Open `{{StaticFolder}}/{{CustomCssFile}}` and uncomment a variable:
 
 ## Next
 
-Continue with [Writing content](/{{DocsUrl}}/writing-content).
+Continue with [Writing content]({{DocsPath}}/writing-content).

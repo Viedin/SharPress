@@ -1,5 +1,5 @@
 {
-  // The name of your site. It is shown at the top of the navigation and links back to the home page.
+  // The name of your site. It is shown at the top of the navigation and links back to the home page, if there is one.
   "title": "My Site",
 
   // Images live in {{RootFolder}}/{{StaticFolder}} and are served from the site root, so {{RootFolder}}/{{StaticFolder}}/logo.svg is /logo.svg.
@@ -11,7 +11,8 @@
   "sidebarTitle": "Documentation",
 
   // The landing section above the content of {{RootFolder}}/{{IndexFile}}.
-  // Remove "home" to show only the Markdown.
+  // Remove "home" to show only the Markdown. Remove it and delete {{RootFolder}}/{{IndexFile}} for a docs-only site:
+  // there is no home page, and the site root goes to the first docs page.
   "home": {
     "hero": {
       "image": "/logo.svg",
@@ -19,13 +20,13 @@
       "text": "Write Markdown. Get a website.",
       "tagline": "Edit {{RootFolder}}/{{SettingsFile}} to make this page your own.",
       "actions": [
-        { "text": "Get started", "link": "/{{DocsUrl}}/getting-started" },
-        { "text": "Writing content", "link": "/{{DocsUrl}}/writing-content", "theme": "alt" }
+        { "text": "Get started", "link": "{{DocsPath}}/getting-started" },
+        { "text": "Writing content", "link": "{{DocsPath}}/writing-content", "theme": "alt" }
       ]
     },
     "features": [
-      { "icon": "rocket-takeoff", "title": "Get started", "details": "A short tour of the files that make up your site.", "link": "/{{DocsUrl}}/getting-started" },
-      { "icon": "markdown", "title": "Writing content", "details": "Add pages and put them in the navigation.", "link": "/{{DocsUrl}}/writing-content" }
+      { "icon": "rocket-takeoff", "title": "Get started", "details": "A short tour of the files that make up your site.", "link": "{{DocsPath}}/getting-started" },
+      { "icon": "markdown", "title": "Writing content", "details": "Add pages and put them in the navigation.", "link": "{{DocsPath}}/writing-content" }
     ]
   },
 
@@ -35,8 +36,8 @@
     {
       "text": "Introduction",
       "items": [
-        { "link": "/{{DocsUrl}}/getting-started" },
-        { "link": "/{{DocsUrl}}/writing-content" }
+        { "link": "{{DocsPath}}/getting-started" },
+        { "link": "{{DocsPath}}/writing-content" }
       ]
     }
   ]
