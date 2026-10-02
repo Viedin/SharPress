@@ -1,0 +1,13 @@
+@using SharPress.Lib.Services
+
+@if (!string.IsNullOrWhiteSpace(Feature.Icon))
+{
+    <span class="sp-feature-icon"><i class="bi bi-@Feature.Icon"></i></span>
+}
+<h2>@Feature.Title</h2>
+<p>@Feature.Details</p>
+
+@code {
+    [Parameter, EditorRequired]
+    public FeatureItem Feature { get; set; } = null!;
+}

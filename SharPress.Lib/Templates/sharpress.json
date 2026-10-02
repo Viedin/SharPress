@@ -1,0 +1,43 @@
+{
+  // The name of your site. It is shown at the top of the navigation and links back to the home page.
+  "title": "My Site",
+
+  // Images live in {{RootFolder}}/{{StaticFolder}} and are served from the site root, so {{RootFolder}}/{{StaticFolder}}/logo.svg is /logo.svg.
+  // Replace the files, or remove these lines to go without a logo and favicon.
+  "logo": "/logo.svg",
+  "favicon": "/favicon.svg",
+
+  // A small label above the docs navigation. Remove it to show no label.
+  "sidebarTitle": "Documentation",
+
+  // The landing section above the content of {{RootFolder}}/{{IndexFile}}.
+  // Remove "home" to show only the Markdown.
+  "home": {
+    "hero": {
+      "image": "/logo.svg",
+      "name": "My Site",
+      "text": "Write Markdown. Get a website.",
+      "tagline": "Edit {{RootFolder}}/{{SettingsFile}} to make this page your own.",
+      "actions": [
+        { "text": "Get started", "link": "/{{DocsUrl}}/getting-started" },
+        { "text": "Writing content", "link": "/{{DocsUrl}}/writing-content", "theme": "alt" }
+      ]
+    },
+    "features": [
+      { "icon": "rocket-takeoff", "title": "Get started", "details": "A short tour of the files that make up your site.", "link": "/{{DocsUrl}}/getting-started" },
+      { "icon": "markdown", "title": "Writing content", "details": "Add pages and put them in the navigation.", "link": "/{{DocsUrl}}/writing-content" }
+    ]
+  },
+
+  // The docs navigation, shown in this order. Each entry links to a file in {{RootFolder}}/{{DocsFolder}} without the .md.
+  // Text is optional and defaults to the page's own # title. Remove "sidebar" to list every page alphabetically.
+  "sidebar": [
+    {
+      "text": "Introduction",
+      "items": [
+        { "link": "/{{DocsUrl}}/getting-started" },
+        { "link": "/{{DocsUrl}}/writing-content" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+/* Your styles, loaded after the built-in ones. Uncomment a variable to change it. */
+:root {
+  /* --sp-brand: #3451b2; */
+}
+
+:root[data-theme="dark"] {
+  /* --sp-brand: #a8b1ff; */
+}

@@ -1,0 +1,50 @@
+@using SharPress.Lib.Services
+@using SharPress.Lib.Startup
+@inject SiteSettingsService SettingsService
+@inject SiteFolders Folders
+@inject NavigationManager Navigation
+@* The HTML document every page is rendered in. Each page wraps its content in <Shell>.
+   There is no <base> element, so relative links and "#id" anchors in the Markdown resolve against the page
+   itself. Links SharPress generates are site-root URLs with the app's path base in front (SiteUrls). *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="@Navigation.SiteUrl("/_content/SharPress.Lib/sharpress.css")" />
+    @if (_customCssVersion is not null)
+    {
+        <link rel="stylesheet" href="@Navigation.SiteUrl($"/{Folders.Options.CustomCssFile}?v={_customCssVersion}")" />
+    }
+    @if (!string.IsNullOrWhiteSpace(_settings.Favicon))
+    {
+        <link rel="icon" href="@Navigation.SiteUrl(_settings.Favicon)" />
+    }
+    <script src="@Navigation.SiteUrl("/_content/SharPress.Lib/sharpress.js")"></script>
+    <HeadOutlet />
+</head>
+<body>
+    <button class="sp-theme-toggle" type="button" aria-label="Toggle dark mode">
+        <i class="bi bi-moon-stars-fill"></i><i class="bi bi-sun-fill"></i>
+    </button>
+    @ChildContent
+</body>
+</html>
+
+@code {
+    private SiteSettings _settings = new();
+    private string? _customCssVersion;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _settings = await SettingsService.GetAsync();
+
+        // The file's timestamp is added to the URL so edits are picked up without clearing the browser cache.
+        var customCss = Folders.CustomCssFile;
+        _customCssVersion = File.Exists(customCss) ? File.GetLastWriteTimeUtc(customCss).Ticks.ToString() : null;
+    }
+}

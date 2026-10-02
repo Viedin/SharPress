@@ -1,0 +1,21 @@
+@using SharPress.Lib.Services
+
+@if (Headings.Count > 0)
+{
+    <nav class="sp-toc" aria-label="On this page">
+        <p class="sp-toc-title">On this page</p>
+        <ul>
+            @foreach (var heading in Headings)
+            {
+                <li class="sp-toc-level-@heading.Level">
+                    <a href="#@heading.Id">@heading.Text</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<PageHeading> Headings { get; set; } = [];
+}
