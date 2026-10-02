@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Text;
+using System.Xml;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.StaticFiles;
 using SharPress.Components.Pages;
@@ -33,6 +36,10 @@ internal static class PageEndpoints
                 pages.RequireAuthorization();
             }
         }
+
+        // A literal route wins over the docs catch-all, so this works with the docs at the root of the site too.
+        pages.MapGet("/sitemap.xml", (HttpContext context, MarkdownPageService markdown, CancellationToken cancellationToken) =>
+            SitemapAsync(context, folders, markdown, cancellationToken));
 
         if (folders.DocsPath.Length == 0)
         {
@@ -98,6 +105,48 @@ internal static class PageEndpoints
             // The page still renders "Page not found" with the navigation, but with the right status code.
             StatusCode = page is null ? StatusCodes.Status404NotFound : null,
         };
+    }
+
+    /// <summary>
+    /// Lists the home page and every docs page for search engines. The URLs must be absolute, so they are built from
+    /// the request's scheme and host; behind a proxy that needs forwarded headers (UseForwardedHeaders).
+    /// </summary>
+    private static async Task<IResult> SitemapAsync(HttpContext context, SiteFolders folders, MarkdownPageService markdown, CancellationToken cancellationToken)
+    {
+        // A sitemap.xml in the static folder replaces the generated one. UseStaticFiles would never serve it,
+        // because this route matches first.
+        if (FindStaticFile(folders, context.Request.Path) is { } file)
+        {
+            return file;
+        }
+
+        var request = context.Request;
+        var urls = await markdown.GetPageUrlsAsync(cancellationToken);
+        var locations = urls.Select(url => UriHelper.BuildAbsolute(request.Scheme, request.Host, request.PathBase, new PathString(folders.BasePath + url)));
+        return TypedResults.Bytes(WriteSitemap(locations), "application/xml");
+    }
+
+    private const string SitemapNamespace = "http://www.sitemaps.org/schemas/sitemap/0.9";
+
+    /// <summary>Writes a sitemap (sitemaps.org) with one &lt;url&gt; per location, as UTF-8 without a byte order mark.</summary>
+    private static byte[] WriteSitemap(IEnumerable<string> locations)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = XmlWriter.Create(stream, new XmlWriterSettings { Encoding = new UTF8Encoding(false), Indent = true }))
+        {
+            writer.WriteStartDocument();
+            writer.WriteStartElement("urlset", SitemapNamespace);
+            foreach (var location in locations)
+            {
+                writer.WriteStartElement("url", SitemapNamespace);
+                writer.WriteElementString("loc", SitemapNamespace, location);
+                writer.WriteEndElement();
+            }
+
+            writer.WriteEndElement();
+        }
+
+        return stream.ToArray();
     }
 
     /// <summary>

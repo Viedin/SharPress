@@ -127,6 +127,29 @@ internal sealed class MarkdownPageService(
     }
 
     /// <summary>
+    /// The site-root URLs of every page, for the sitemap: "/" if the site has a home page, then every docs page the
+    /// source lists, in slug order, whether or not the sidebar links to it.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> GetPageUrlsAsync(CancellationToken cancellationToken = default)
+    {
+        var settings = await settingsService.GetAsync(cancellationToken);
+        var urls = new List<string>();
+
+        // Without a home page the root only redirects, so it isn't a page of its own.
+        if (await HasHomePageAsync(settings, cancellationToken))
+        {
+            urls.Add("/");
+        }
+
+        foreach (var slug in (await GetDocsTitlesAsync(cancellationToken)).Keys)
+        {
+            urls.Add($"{folders.DocsPath}/{slug}");
+        }
+
+        return urls;
+    }
+
+    /// <summary>
     /// Builds the docs navigation from the sidebar in the settings. Without a sidebar, every docs page is listed,
     /// sorted by path.
     /// </summary>

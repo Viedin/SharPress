@@ -186,6 +186,55 @@ public class EndpointTests
     }
 
     [Fact]
+    public async Task Sitemap_lists_the_home_page_and_every_docs_page()
+    {
+        await using var site = await TestSite.StartAsync();
+        site.WriteFile("docs/not-in-sidebar.md", "# Not in the sidebar\n");
+
+        var response = await site.Client.GetAsync("/sitemap.xml");
+        var xml = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/xml", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">", xml);
+        Assert.Contains("<loc>http://localhost/</loc>", xml);
+        Assert.Contains("<loc>http://localhost/docs/getting-started</loc>", xml);
+        Assert.Contains("<loc>http://localhost/docs/not-in-sidebar</loc>", xml);
+    }
+
+    [Fact]
+    public async Task Sitemap_follows_the_path_base_and_base_url_and_skips_a_missing_home_page()
+    {
+        await using var site = await TestSite.StartAsync(
+            options =>
+            {
+                options.BaseUrl = "/faq";
+                options.DocsUrl = "/";
+            },
+            beforeSharPress: app =>
+            {
+                app.UsePathBase("/myapp");
+                app.UseRouting();
+            });
+        File.Delete(site.Folders.IndexFile);
+        site.WriteFile("sharpress.json", """{ "title": "My Docs" }""");
+
+        var xml = await site.Client.GetStringAsync("/myapp/faq/sitemap.xml");
+
+        Assert.Contains("<loc>http://localhost/myapp/faq/getting-started</loc>", xml);
+        Assert.DoesNotContain("<loc>http://localhost/myapp/faq/</loc>", xml);
+    }
+
+    [Fact]
+    public async Task Sitemap_in_the_static_folder_replaces_the_generated_one()
+    {
+        await using var site = await TestSite.StartAsync();
+        site.WriteFile("public/sitemap.xml", "<urlset>my own</urlset>");
+
+        Assert.Equal("<urlset>my own</urlset>", await site.Client.GetStringAsync("/sitemap.xml"));
+    }
+
+    [Fact]
     public async Task Shows_the_error_page_outside_development()
     {
         await using var site = await TestSite.StartAsync(

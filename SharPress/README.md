@@ -8,6 +8,7 @@ build step: edit a file, save, refresh.
 - An **On this page** outline that tracks where you are on the page
 - An optional home page with a hero and feature cards
 - Light and dark themes, custom CSS, a logo and a favicon
+- A sitemap at `/sitemap.xml` for search engines
 - Works on phones, under any URL, and behind your app's sign-in if you want
 - Pages from files by default, or from your own database or CMS
 
@@ -78,6 +79,15 @@ answer every URL that nothing else in your app matches, so if the app has pages 
 | `CreateStarterFiles`   | `true`           |
 | `RequireAuthorization` | `false`          |
 | `AuthorizationPolicy`  | `null`           |
+
+## Sitemap
+
+`/sitemap.xml` lists the home page and every docs page, including pages the sidebar doesn't link to. It
+moves with `BaseUrl` (`/faq/sitemap.xml`) and needs sign-in like the rest of the site when
+`RequireAuthorization` is on. To write your own, put a `sitemap.xml` in `public/`; it replaces the generated one.
+
+Sitemap URLs must be absolute, so SharPress builds them from the request's scheme and host. Behind a reverse
+proxy, add `app.UseForwardedHeaders()` so they show your public address instead of the proxy's.
 
 ## Requiring sign-in
 
