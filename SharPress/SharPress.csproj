@@ -17,7 +17,7 @@
     <Title>SharPress</Title>
     <Authors>Filip Jinstrand</Authors>
     <Copyright>Copyright (c) 2026 Filip Jinstrand</Copyright>
-    <Description>Turn a folder of Markdown files into a documentation site in an ASP.NET Core app. Navigation, an on-this-page outline, a home page, light and dark themes and custom styling, all from a small JSON file.</Description>
+    <Description>Serve a folder of Markdown files as a documentation site from an ASP.NET Core app. Sidebar navigation, an on-this-page outline, a home page, and light and dark themes. No Node toolchain and no build step.</Description>
     <PackageTags>markdown;documentation;docs;docs-site;aspnetcore</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

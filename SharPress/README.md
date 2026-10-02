@@ -1,12 +1,14 @@
 # SharPress
 
-Turn a folder of Markdown files into a documentation site in your ASP.NET Core app.
+Serve a folder of Markdown files as a documentation site from your ASP.NET Core app. No Node toolchain, no
+build step: edit a file, save, refresh.
 
 - Pages from Markdown, with tables, task lists, footnotes and code blocks
 - A sidebar you order yourself, plus previous and next links
-- An **On this page** outline that follows your scrolling
+- An **On this page** outline that tracks where you are on the page
 - A home page with a hero and feature cards
 - Light and dark themes, custom CSS, a logo and a favicon
+- Works on phones, under any URL, and behind your app's sign-in if you want
 
 ## Install
 
