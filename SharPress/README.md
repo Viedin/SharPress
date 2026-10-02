@@ -4,6 +4,7 @@ Serve a folder of Markdown files as a documentation site from your ASP.NET Core 
 build step: edit a file, save, refresh.
 
 - Pages from Markdown, with tables, task lists, footnotes and code blocks
+- Syntax highlighting in GitHub's colours, for code blocks that name their language
 - A sidebar you order yourself, plus previous and next links
 - An **On this page** outline that tracks where you are on the page
 - An optional home page with a hero and feature cards

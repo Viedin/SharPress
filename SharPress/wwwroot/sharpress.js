@@ -1,5 +1,7 @@
 (function () {
     var root = document.documentElement;
+    // The folder this script is served from, "/_content/SharPress/" with the app's path base in front.
+    var assets = document.currentScript.src.replace(/[^/]*$/, '');
     var media = window.matchMedia('(prefers-color-scheme: dark)');
 
     function apply(theme) {
@@ -69,6 +71,27 @@
         void root.offsetWidth; // apply the closed state before transitions come back
         root.classList.remove('sp-no-transition');
     });
+
+    // Syntax highlighting. highlight.js is only loaded on pages with a code block that names its language
+    // (```csharp); blocks without one stay plain, as on GitHub, rather than having their language guessed.
+    function highlight() {
+        var blocks = document.querySelectorAll('pre code[class*="language-"]');
+        if (!blocks.length) return;
+
+        var script = document.createElement('script');
+        script.src = assets + 'lib/highlight.js/highlight.min.js';
+        script.onload = function () {
+            blocks.forEach(function (block) {
+                var language = /(?:^|\s)language-(\S+)/.exec(block.className);
+                // This build has the common languages only. Others (razor, mermaid) are left plain instead of
+                // logging a warning for every block.
+                if (language && hljs.getLanguage(language[1])) hljs.highlightElement(block);
+            });
+        };
+        document.head.appendChild(script);
+    }
+
+    document.addEventListener('DOMContentLoaded', highlight);
 
     // "On this page": highlight the link of the top-level section currently being read.
     // A section runs from its heading to the next top-level heading, so subsections belong to their parent.

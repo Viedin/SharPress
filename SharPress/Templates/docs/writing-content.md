@@ -47,3 +47,6 @@ Tables, task lists, footnotes and fenced code blocks all work:
 ```csharp
 Console.WriteLine("Hello from SharPress");
 ```
+
+Name the language after the opening fence (`csharp`, `json`, `bash`, `html`, ...) to get syntax
+highlighting. Blocks without a language are shown plain.

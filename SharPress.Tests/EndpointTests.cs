@@ -186,6 +186,23 @@ public class EndpointTests
     }
 
     [Fact]
+    public async Task Serves_the_icons_and_the_highlighter_from_the_package()
+    {
+        await using var site = await TestSite.StartAsync();
+
+        var html = await site.Client.GetStringAsync("/docs/getting-started");
+        var icons = await site.Client.GetAsync("/_content/SharPress/lib/bootstrap-icons/bootstrap-icons.min.css");
+        var font = await site.Client.GetAsync("/_content/SharPress/lib/bootstrap-icons/fonts/bootstrap-icons.woff2");
+        var highlighter = await site.Client.GetAsync("/_content/SharPress/lib/highlight.js/highlight.min.js");
+
+        Assert.Contains("href=\"/_content/SharPress/lib/bootstrap-icons/bootstrap-icons.min.css\"", html);
+        Assert.DoesNotContain("cdn.jsdelivr.net", html);
+        Assert.Equal(HttpStatusCode.OK, icons.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, font.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, highlighter.StatusCode);
+    }
+
+    [Fact]
     public async Task Sitemap_lists_the_home_page_and_every_docs_page()
     {
         await using var site = await TestSite.StartAsync();

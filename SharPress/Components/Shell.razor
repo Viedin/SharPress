@@ -14,7 +14,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    @* Bootstrap Icons and highlight.js ship in wwwroot/lib rather than coming from a CDN, so sites without
+       internet access work and visitors' browsers don't contact a third party. *@
+    <link rel="stylesheet" href="@Navigation.AssetUrl("/_content/SharPress/lib/bootstrap-icons/bootstrap-icons.min.css")" />
     <link rel="stylesheet" href="@Navigation.AssetUrl("/_content/SharPress/sharpress.css")" />
     @if (_customCssVersion is not null)
     {

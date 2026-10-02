@@ -6,6 +6,21 @@
     --sp-border: #e2e2e3;
     --sp-brand: #3451b2;
     --sp-code-bg: #f6f6f7;
+
+    /* Syntax highlighting: GitHub's light colours, from highlight.js's "github" theme. */
+    --sp-hl-keyword: #d73a49;
+    --sp-hl-title: #6f42c1;
+    --sp-hl-constant: #005cc5;
+    --sp-hl-string: #032f62;
+    --sp-hl-built-in: #e36209;
+    --sp-hl-comment: #6a737d;
+    --sp-hl-tag: #22863a;
+    --sp-hl-section: #005cc5;
+    --sp-hl-bullet: #735c0f;
+    --sp-hl-addition: #22863a;
+    --sp-hl-addition-bg: #f0fff4;
+    --sp-hl-deletion: #b31d28;
+    --sp-hl-deletion-bg: #ffeef0;
 }
 
 :root[data-theme="dark"] {
@@ -16,6 +31,21 @@
     --sp-border: #2e2e32;
     --sp-brand: #a8b1ff;
     --sp-code-bg: #161618;
+
+    /* From highlight.js's "github-dark" theme. */
+    --sp-hl-keyword: #ff7b72;
+    --sp-hl-title: #d2a8ff;
+    --sp-hl-constant: #79c0ff;
+    --sp-hl-string: #a5d6ff;
+    --sp-hl-built-in: #ffa657;
+    --sp-hl-comment: #8b949e;
+    --sp-hl-tag: #7ee787;
+    --sp-hl-section: #1f6feb;
+    --sp-hl-bullet: #f2cc60;
+    --sp-hl-addition: #aff5b4;
+    --sp-hl-addition-bg: #033a16;
+    --sp-hl-deletion: #ffdcd7;
+    --sp-hl-deletion-bg: #67060c;
     color-scheme: dark;
 }
 
@@ -214,6 +244,55 @@ html { scroll-behavior: smooth; }
     color: inherit;
     font-size: 0.875rem;
 }
+
+/* Classes highlight.js adds to code blocks (sharpress.js). The theme's own stylesheet isn't loaded: it sets a
+   background and only has one set of colours, while these follow the light/dark toggle. */
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ { color: var(--sp-hl-keyword); }
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ { color: var(--sp-hl-title); }
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-variable { color: var(--sp-hl-constant); }
+
+.hljs-meta .hljs-string,
+.hljs-regexp,
+.hljs-string { color: var(--sp-hl-string); }
+
+.hljs-built_in,
+.hljs-symbol { color: var(--sp-hl-built-in); }
+
+.hljs-code,
+.hljs-comment,
+.hljs-formula { color: var(--sp-hl-comment); }
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-pseudo,
+.hljs-selector-tag { color: var(--sp-hl-tag); }
+
+.hljs-section { color: var(--sp-hl-section); font-weight: 700; }
+.hljs-bullet { color: var(--sp-hl-bullet); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
+.hljs-addition { color: var(--sp-hl-addition); background: var(--sp-hl-addition-bg); }
+.hljs-deletion { color: var(--sp-hl-deletion); background: var(--sp-hl-deletion-bg); }
 
 .sp-doc table {
     display: block;
