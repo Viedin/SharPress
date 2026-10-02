@@ -62,8 +62,8 @@ internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsServi
         .Build();
 
     /// <summary>
-    /// Reads the home page file and renders it to HTML, with <paramref name="pathBase"/> in front of site-root
-    /// links. Returns null if the file doesn't exist.
+    /// Reads the home page file and renders it to HTML, with <paramref name="pathBase"/> (the app's path base and
+    /// the base URL) in front of site-root links. Returns null if the file doesn't exist.
     /// </summary>
     public async Task<MarkdownPage?> GetIndexPageAsync(string pathBase, CancellationToken cancellationToken = default)
     {
@@ -73,8 +73,8 @@ internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsServi
 
     /// <summary>
     /// Renders a page from the docs folder. The slug is the file path relative to the docs folder without the
-    /// extension (e.g. "getting-started" for docs/getting-started.md), and <paramref name="pathBase"/> is put in
-    /// front of site-root links. Returns null if there is no matching page.
+    /// extension (e.g. "getting-started" for docs/getting-started.md), and <paramref name="pathBase"/> (the app's path base
+    /// and the base URL) is put in front of site-root links. Returns null if there is no matching page.
     /// </summary>
     public async Task<MarkdownPage?> GetDocsPageAsync(string? slug, string pathBase, CancellationToken cancellationToken = default)
     {
@@ -208,7 +208,7 @@ internal sealed class MarkdownPageService(SiteFolders folders, SiteSettingsServi
     }
 
     /// <param name="markdown">The Markdown to render.</param>
-    /// <param name="pathBase">The app's path base, put in front of site-root links such as "/docs/intro".</param>
+    /// <param name="pathBase">The app's path base and the base URL, put in front of site-root links such as "/docs/intro".</param>
     internal static MarkdownPage Render(string markdown, string pathBase = "")
     {
         var document = Markdown.Parse(markdown, Pipeline);

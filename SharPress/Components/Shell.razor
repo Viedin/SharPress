@@ -5,23 +5,24 @@
 @inject NavigationManager Navigation
 @* The HTML document every page is rendered in. Each page wraps its content in <Shell>.
    There is no <base> element, so relative links and "#id" anchors in the Markdown resolve against the page
-   itself. Links SharPress generates are site-root URLs with the app's path base in front (SiteUrls). *@
+   itself. Links SharPress generates are site-root URLs with the app's path base and the base URL in front
+   (SiteUrls); SharPress's own files under _content are at the app's root and only get the path base. *@
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="@Navigation.SiteUrl("/_content/SharPress/sharpress.css")" />
+    <link rel="stylesheet" href="@Navigation.AssetUrl("/_content/SharPress/sharpress.css")" />
     @if (_customCssVersion is not null)
     {
-        <link rel="stylesheet" href="@Navigation.SiteUrl($"/{Folders.Options.CustomCssFile}?v={_customCssVersion}")" />
+        <link rel="stylesheet" href="@Navigation.SiteUrl(Folders, $"/{Folders.Options.CustomCssFile}?v={_customCssVersion}")" />
     }
     @if (!string.IsNullOrWhiteSpace(_settings.Favicon))
     {
-        <link rel="icon" href="@Navigation.SiteUrl(_settings.Favicon)" />
+        <link rel="icon" href="@Navigation.SiteUrl(Folders, _settings.Favicon)" />
     }
-    <script src="@Navigation.SiteUrl("/_content/SharPress/sharpress.js")"></script>
+    <script src="@Navigation.AssetUrl("/_content/SharPress/sharpress.js")"></script>
     <HeadOutlet />
 </head>
 <body>

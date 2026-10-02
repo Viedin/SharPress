@@ -99,6 +99,26 @@ public class EndpointTests
     }
 
     [Fact]
+    public async Task BaseUrl_moves_the_site_and_leaves_the_root_to_the_app()
+    {
+        await using var site = await TestSite.StartAsync(
+            options => options.BaseUrl = "/faq/",
+            beforeSharPress: app => app.MapGet("/", () => "the app's own home page"));
+        site.WriteFile("docs/links.md", "# Links\n\n[root](/docs/getting-started) [relative](other)\n");
+
+        Assert.Equal("the app's own home page", await site.Client.GetStringAsync("/"));
+        Assert.Equal(HttpStatusCode.OK, (await site.Client.GetAsync("/faq")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await site.Client.GetAsync("/faq/logo.svg")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await site.Client.GetAsync("/docs/getting-started")).StatusCode);
+
+        var html = await site.Client.GetStringAsync("/faq/docs/links");
+        Assert.Contains("href=\"/_content/SharPress/sharpress.css\"", html);
+        Assert.Contains("href=\"/faq/docs/getting-started\"", html);
+        Assert.Contains("href=\"other\"", html);
+        Assert.Contains("class=\"sp-nav-home\" href=\"/faq/\"", html);
+    }
+
+    [Fact]
     public async Task Shows_the_error_page_outside_development()
     {
         await using var site = await TestSite.StartAsync(

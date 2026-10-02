@@ -1,19 +1,21 @@
 @using SharPress.Services
+@using SharPress.Startup
 @inject NavigationManager Navigation
+@inject SiteFolders Folders
 
 @if (Previous is not null || Next is not null)
 {
     <nav class="sp-neighbours" aria-label="Page navigation">
         @if (Previous is not null)
         {
-            <a class="sp-neighbour sp-neighbour-previous" href="@Navigation.SiteUrl(Previous.Href)">
+            <a class="sp-neighbour sp-neighbour-previous" href="@Navigation.SiteUrl(Folders, Previous.Href)">
                 <span class="sp-neighbour-label">Previous</span>
                 <span class="sp-neighbour-title"><i class="bi bi-arrow-left"></i>@Previous.Title</span>
             </a>
         }
         @if (Next is not null)
         {
-            <a class="sp-neighbour sp-neighbour-next" href="@Navigation.SiteUrl(Next.Href)">
+            <a class="sp-neighbour sp-neighbour-next" href="@Navigation.SiteUrl(Folders, Next.Href)">
                 <span class="sp-neighbour-label">Next</span>
                 <span class="sp-neighbour-title">@Next.Title<i class="bi bi-arrow-right"></i></span>
             </a>

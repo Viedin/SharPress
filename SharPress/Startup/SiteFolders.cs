@@ -11,6 +11,9 @@ internal sealed class SiteFolders
     {
         Options = options.Value;
 
+        var baseUrl = Options.BaseUrl.Trim('/');
+        BasePath = baseUrl.Length == 0 ? string.Empty : $"/{baseUrl}";
+
         DocsUrl = Options.DocsUrl.Trim('/');
         if (DocsUrl.Length == 0)
         {
@@ -31,6 +34,12 @@ internal sealed class SiteFolders
 
     public SharPressOptions Options { get; }
 
+    /// <summary>
+    /// The URL the site is served under (<see cref="SharPressOptions.BaseUrl"/>), with a leading slash and no
+    /// trailing slash, e.g. "/faq"; empty when the site is at the root.
+    /// </summary>
+    public string BasePath { get; }
+
     /// <summary>The part of the URL the docs pages are served under, without slashes, e.g. "docs" for /docs/getting-started.</summary>
     public string DocsUrl { get; }
 
@@ -50,12 +59,18 @@ internal sealed class SiteFolders
     public bool RequireAuthorization => Options.RequireAuthorization || Options.AuthorizationPolicy is not null;
 
     /// <summary>
-    /// Finds the file in the static folder at a request path, such as "/docs/images/diagram.png". Returns its full
-    /// path, or null if there is no such file.
+    /// Finds the file in the static folder at a request path, such as "/docs/images/diagram.png" (or
+    /// "/faq/docs/images/diagram.png" with <see cref="BasePath"/> "/faq"). Returns its full path, or null if
+    /// there is no such file.
     /// </summary>
     public string? FindStaticFile(PathString requestPath)
     {
-        var relativePath = requestPath.Value?.TrimStart('/');
+        if (!requestPath.StartsWithSegments(BasePath, out var sitePath))
+        {
+            return null;
+        }
+
+        var relativePath = sitePath.Value?.TrimStart('/');
         if (string.IsNullOrEmpty(relativePath))
         {
             return null;

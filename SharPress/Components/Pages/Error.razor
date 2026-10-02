@@ -1,6 +1,8 @@
 @* The exception handler set up in UseSharPress re-executes failed requests here outside development. *@
 @using SharPress.Services
+@using SharPress.Startup
 @inject NavigationManager Navigation
+@inject SiteFolders Folders
 
 <Shell>
     <PageTitle>Error</PageTitle>
@@ -13,7 +15,7 @@
             {
                 <p>Request ID: <code>@RequestId</code></p>
             }
-            <p><a href="@Navigation.SiteUrl("/")">Back to the home page</a></p>
+            <p><a href="@Navigation.SiteUrl(Folders, "/")">Back to the home page</a></p>
         </main>
     </div>
 </Shell>

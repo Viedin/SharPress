@@ -1,5 +1,7 @@
 @using SharPress.Services
+@using SharPress.Startup
 @inject NavigationManager Navigation
+@inject SiteFolders Folders
 
 @if (Home is not null)
 {
@@ -8,7 +10,7 @@
         <section class="sp-hero">
             @if (!string.IsNullOrWhiteSpace(hero.Image))
             {
-                <img class="sp-hero-image" src="@Navigation.SiteUrl(hero.Image)" alt="@hero.Name" />
+                <img class="sp-hero-image" src="@Navigation.SiteUrl(Folders, hero.Image)" alt="@hero.Name" />
             }
             @if (!string.IsNullOrWhiteSpace(hero.Name))
             {
@@ -27,7 +29,7 @@
                 <div class="sp-hero-actions">
                     @foreach (var action in hero.Actions.Where(a => !string.IsNullOrWhiteSpace(a.Link)))
                     {
-                        <a class="sp-button sp-button-@(action.Theme == "alt" ? "alt" : "brand")" href="@Navigation.SiteUrl(action.Link)">@action.Text</a>
+                        <a class="sp-button sp-button-@(action.Theme == "alt" ? "alt" : "brand")" href="@Navigation.SiteUrl(Folders, action.Link)">@action.Text</a>
                     }
                 </div>
             }
@@ -47,7 +49,7 @@
                 }
                 else
                 {
-                    <a class="sp-feature sp-feature-link" href="@Navigation.SiteUrl(feature.Link)">
+                    <a class="sp-feature sp-feature-link" href="@Navigation.SiteUrl(Folders, feature.Link)">
                         <FeatureContent Feature="feature" />
                     </a>
                 }

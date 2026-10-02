@@ -19,9 +19,9 @@ internal static class PageEndpoints
     // The handlers return IResult because the endpoint code generator can't see the Razor-generated page types.
     public static void Map(WebApplication app, SiteFolders folders)
     {
-        // The pages are grouped so they can share an authorization requirement. The error page isn't in the
-        // group: it has to render for everyone.
-        var pages = app.MapGroup("");
+        // The pages are grouped under the base URL so they can share an authorization requirement. The error
+        // page isn't in the group: it has to render for everyone.
+        var pages = app.MapGroup(folders.BasePath);
         if (folders.RequireAuthorization)
         {
             if (folders.Options.AuthorizationPolicy is { } policy)
@@ -37,7 +37,7 @@ internal static class PageEndpoints
         pages.MapGet("/", async Task<IResult> (HttpContext context, MarkdownPageService markdown, SiteSettingsService settings, CancellationToken cancellationToken) =>
             new RazorComponentResult<Home>(new Dictionary<string, object?>
             {
-                [nameof(Home.Page)] = await markdown.GetIndexPageAsync(PathBase(context), cancellationToken),
+                [nameof(Home.Page)] = await markdown.GetIndexPageAsync(SiteBase(context, folders), cancellationToken),
                 [nameof(Home.Settings)] = (await settings.GetAsync(cancellationToken)).Home,
             }));
 
@@ -50,7 +50,7 @@ internal static class PageEndpoints
                 return file;
             }
 
-            var page = await markdown.GetDocsPageAsync(slug, PathBase(context), cancellationToken);
+            var page = await markdown.GetDocsPageAsync(slug, SiteBase(context, folders), cancellationToken);
             var navigation = await markdown.GetDocsNavigationAsync(cancellationToken);
             var (previous, next) = navigation.GetNeighbours($"/{folders.DocsUrl}/{slug}");
 
@@ -68,7 +68,7 @@ internal static class PageEndpoints
         });
 
         // Map, not MapGet: the exception handler re-executes the failed request with its original method.
-        app.Map("/Error", IResult (HttpContext context) =>
+        app.Map($"{folders.BasePath}/Error", IResult (HttpContext context) =>
             new RazorComponentResult<Error>(new Dictionary<string, object?>
             {
                 [nameof(Error.RequestId)] = Activity.Current?.Id ?? context.TraceIdentifier,
@@ -77,7 +77,8 @@ internal static class PageEndpoints
 
     private static readonly FileExtensionContentTypeProvider ContentTypes = new();
 
-    private static string PathBase(HttpContext context) => context.Request.PathBase.Value ?? string.Empty;
+    /// <summary>The URL of the site's root: the app's path base and the base URL, e.g. "" or "/myapp/faq".</summary>
+    private static string SiteBase(HttpContext context, SiteFolders folders) => context.Request.PathBase.Value + folders.BasePath;
 
     /// <summary>
     /// Finds a file in the static folder at the requested path. Like UseStaticFiles, files with an unknown type

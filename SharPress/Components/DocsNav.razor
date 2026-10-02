@@ -1,13 +1,15 @@
 @using SharPress.Services
+@using SharPress.Startup
 @inject NavigationManager Navigation
+@inject SiteFolders Folders
 
 @if (Groups.Count > 0)
 {
     <nav class="sp-nav" aria-label="Documentation">
-        <a class="sp-nav-home" href="@Navigation.SiteUrl("/")">
+        <a class="sp-nav-home" href="@Navigation.SiteUrl(Folders, "/")">
             @if (!string.IsNullOrWhiteSpace(SiteLogo))
             {
-                <img class="sp-nav-logo" src="@Navigation.SiteUrl(SiteLogo)" alt="" />
+                <img class="sp-nav-logo" src="@Navigation.SiteUrl(Folders, SiteLogo)" alt="" />
             }
             @(string.IsNullOrWhiteSpace(SiteTitle) ? "Home" : SiteTitle)
         </a>
@@ -26,7 +28,7 @@
                     @foreach (var item in group.Items)
                     {
                         <li>
-                            <NavLink href="@Navigation.SiteUrl(item.Href)"Match="NavLinkMatch.All">@item.Title</NavLink>
+                            <NavLink href="@Navigation.SiteUrl(Folders, item.Href)"Match="NavLinkMatch.All">@item.Title</NavLink>
                         </li>
                     }
                 </ul>

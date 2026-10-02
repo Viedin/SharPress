@@ -55,14 +55,20 @@ public static class Init
                 "Call builder.Services.AddAuthentication(...) and builder.Services.AddAuthorization() before building the app.");
         }
 
-        if (!app.Environment.IsDevelopment())
+        // Only requests under the base URL get SharPress's error page and HTTPS rules, so an app that hosts
+        // SharPress under e.g. /faq keeps its own for everything else. Without a base URL this is every request.
+        app.UseWhen(context => context.Request.Path.StartsWithSegments(folders.BasePath), site =>
         {
-            app.UseExceptionHandler("/Error", createScopeForErrors: true);
-            app.UseHsts();
-        }
+            if (!app.Environment.IsDevelopment())
+            {
+                site.UseExceptionHandler($"{folders.BasePath}/Error", createScopeForErrors: true);
+                site.UseHsts();
+            }
 
-        app.UseHttpsRedirection();
-        app.UseAntiforgery();
+            site.UseHttpsRedirection();
+            site.UseAntiforgery();
+        });
+
         app.MapStaticAssets();
 
         // The user's static folder (custom.css, icons, images) is served from the site root.
@@ -74,6 +80,7 @@ public static class Init
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = new PhysicalFileProvider(folders.Static),
+            RequestPath = folders.BasePath,
         });
 
         PageEndpoints.Map(app, folders);

@@ -60,6 +60,7 @@ builder.AddSharPress(options =>
 | ---------------------- | ---------------- |
 | `RootFolder`           | `SharpLib`       |
 | `DocsFolder`           | `docs`           |
+| `BaseUrl`              | (empty)          |
 | `DocsUrl`              | `docs`           |
 | `StaticFolder`         | `public`         |
 | `IndexFile`            | `Index.md`       |
@@ -91,6 +92,26 @@ builder.AddSharPress(options => options.AuthorizationPolicy = "DocsReaders");
 The home page, the docs pages and the files in `public/` are locked. The error page and SharPress's own
 stylesheet and script stay public. Visitors who aren't signed in get your sign-in scheme's challenge, for
 example a redirect to your login page; SharPress doesn't add a login page of its own.
+
+## Adding docs to an existing app
+
+If your app already has its own pages at the root, such as MVC controllers or Razor Pages, serve SharPress
+under a URL of its own with `BaseUrl`. Otherwise both try to answer `/` and the request fails with
+`AmbiguousMatchException`:
+
+```csharp
+builder.Services.AddControllersWithViews();
+builder.AddSharPress(options => options.BaseUrl = "faq");
+
+var app = builder.Build();
+app.UseSharPress(); // /faq, /faq/docs/getting-started, /faq/logo.svg
+app.MapDefaultControllerRoute();
+app.Run();
+```
+
+Links in `sharpress.json` and in your Markdown that start with `/` are relative to the base URL, so
+`"/docs/getting-started"` keeps working. Use a full URL to link to the rest of the app. SharPress's error page
+and HTTPS rules only apply to requests under the base URL.
 
 ## Hosting under a sub-path
 
