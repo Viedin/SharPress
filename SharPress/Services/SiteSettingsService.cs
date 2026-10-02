@@ -1,7 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Logging;
-using SharPress.Startup;
 
 namespace SharPress.Services;
 
@@ -13,34 +11,21 @@ namespace SharPress.Services;
 [JsonSerializable(typeof(SiteSettings))]
 internal sealed partial class SiteSettingsJsonContext : JsonSerializerContext;
 
-internal sealed class SiteSettingsService(SiteFolders folders, ILogger<SiteSettingsService> logger)
+/// <summary>
+/// The settings for the current request. It is scoped: the endpoint, the navigation and the page shell all need
+/// the settings, and with a database or CMS source each read could be a round trip.
+/// </summary>
+internal sealed class SiteSettingsService(ISharPressContentSource source)
 {
-    /// <summary>
-    /// Reads the settings file (sharpress.json by default). The file is read on every call so edits show up on refresh.
-    /// Returns default settings if the file is missing, invalid, or can't be read right now (e.g. locked mid-save).
-    /// </summary>
-    public async Task<SiteSettings> GetAsync(CancellationToken cancellationToken = default)
-    {
-        var path = folders.SettingsFile;
-        if (!File.Exists(path))
-        {
-            return new SiteSettings();
-        }
+    private Task<SiteSettings>? _settings;
 
-        try
-        {
-            await using var stream = File.OpenRead(path);
-            return await JsonSerializer.DeserializeAsync(stream, SiteSettingsJsonContext.Default.SiteSettings, cancellationToken) ?? new SiteSettings();
-        }
-        catch (FileNotFoundException)
-        {
-            // Deleted after the check above.
-            return new SiteSettings();
-        }
-        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
-        {
-            logger.LogWarning(exception, "Could not read {File}; using default settings.", path);
-            return new SiteSettings();
-        }
-    }
+    /// <summary>
+    /// Returns the site settings from the content source, read once per request. Returns default settings if the
+    /// source has none.
+    /// </summary>
+    public Task<SiteSettings> GetAsync(CancellationToken cancellationToken = default) =>
+        _settings ??= LoadAsync(cancellationToken);
+
+    private async Task<SiteSettings> LoadAsync(CancellationToken cancellationToken) =>
+        await source.GetSettingsAsync(cancellationToken) ?? new SiteSettings();
 }

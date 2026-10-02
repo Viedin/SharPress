@@ -1,10 +1,11 @@
 namespace SharPress.Services;
 
 /// <summary>
-/// The site configuration read from the settings file (sharpress.json by default). List properties turn a JSON null into an empty
-/// list, so the components can use them without null checks.
+/// The site configuration read from the settings file (sharpress.json by default), or returned by a custom
+/// <see cref="ISharPressContentSource"/>. List properties turn a JSON null into an empty list, so the components
+/// can use them without null checks.
 /// </summary>
-internal sealed class SiteSettings
+public sealed class SiteSettings
 {
     /// <summary>The name of the site, shown at the top of the docs navigation as a link to the home page.</summary>
     public string? Title { get; set; }
@@ -19,12 +20,12 @@ internal sealed class SiteSettings
     public string? SidebarTitle { get; set; }
 
     /// <summary>
-    /// The docs navigation, in the order it should be rendered. When empty, every page in the docs folder is
-    /// listed alphabetically by path.
+    /// The docs navigation, in the order it should be rendered. When empty, every docs page is listed
+    /// alphabetically by path.
     /// </summary>
     public List<SidebarItem> Sidebar { get; set => field = value ?? []; } = [];
 
-    /// <summary>A landing section shown above the content of Index.md. Nothing extra is shown when it is null.</summary>
+    /// <summary>A landing section shown above the content of the home page. Nothing extra is shown when it is null.</summary>
     public HomeSettings? Home { get; set; }
 }
 
@@ -90,7 +91,7 @@ public sealed class FeatureItem
 /// An entry in the sidebar. An entry with <see cref="Items"/> is a group heading; an entry with a
 /// <see cref="Link"/> is a link to a page.
 /// </summary>
-internal sealed class SidebarItem
+public sealed class SidebarItem
 {
     /// <summary>The label. For links it defaults to the page's own title.</summary>
     public string? Text { get; set; }
@@ -98,5 +99,6 @@ internal sealed class SidebarItem
     /// <summary>The page to link to, for example "/docs/getting-started".</summary>
     public string? Link { get; set; }
 
+    /// <summary>The links in a group. Groups inside groups are flattened into their parent.</summary>
     public List<SidebarItem> Items { get; set => field = value ?? []; } = [];
 }

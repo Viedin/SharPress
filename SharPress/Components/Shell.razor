@@ -1,8 +1,10 @@
 @using SharPress.Services
 @using SharPress.Startup
+@using Microsoft.Extensions.Logging
 @inject SiteSettingsService SettingsService
 @inject SiteFolders Folders
 @inject NavigationManager Navigation
+@inject ILogger<Shell> Logger
 @* The HTML document every page is rendered in. Each page wraps its content in <Shell>.
    There is no <base> element, so relative links and "#id" anchors in the Markdown resolve against the page
    itself. Links SharPress generates are site-root URLs with the app's path base and the base URL in front
@@ -42,7 +44,16 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _settings = await SettingsService.GetAsync();
+        try
+        {
+            _settings = await SettingsService.GetAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Normal pages read the settings in their endpoint first, so a failing content source has already sent
+            // the request to the error page. The error page renders in this shell too, and must not fail the same way.
+            Logger.LogError(exception, "Could not read the site settings from the content source; using defaults.");
+        }
 
         // The file's timestamp is added to the URL so edits are picked up without clearing the browser cache.
         var customCss = Folders.CustomCssFile;

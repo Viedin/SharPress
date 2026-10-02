@@ -55,10 +55,11 @@ internal static class PageEndpoints
     private static async Task<IResult> HomeAsync(HttpContext context, SiteFolders folders, MarkdownPageService markdown, SiteSettingsService settingsService, CancellationToken cancellationToken)
     {
         var settings = await settingsService.GetAsync(cancellationToken);
+        var page = await markdown.GetIndexPageAsync(SiteBase(context, folders), cancellationToken);
 
-        // A docs-only site has no home page file and no "home" section, so the root goes to the first docs
+        // A docs-only site has no home page content and no "home" section, so the root goes to the first docs
         // page instead of an empty page. The redirect is temporary: adding a home page later takes it back.
-        if (!markdown.HasHomePage(settings))
+        if (page is null && settings.Home is null)
         {
             var navigation = await markdown.GetDocsNavigationAsync(cancellationToken);
             return navigation.FirstPage is { } first
@@ -68,7 +69,7 @@ internal static class PageEndpoints
 
         return new RazorComponentResult<Home>(new Dictionary<string, object?>
         {
-            [nameof(Home.Page)] = await markdown.GetIndexPageAsync(SiteBase(context, folders), cancellationToken),
+            [nameof(Home.Page)] = page,
             [nameof(Home.Settings)] = settings.Home,
         });
     }
