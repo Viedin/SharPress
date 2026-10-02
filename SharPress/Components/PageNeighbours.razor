@@ -1,0 +1,30 @@
+@using SharPress.Services
+@inject NavigationManager Navigation
+
+@if (Previous is not null || Next is not null)
+{
+    <nav class="sp-neighbours" aria-label="Page navigation">
+        @if (Previous is not null)
+        {
+            <a class="sp-neighbour sp-neighbour-previous" href="@Navigation.SiteUrl(Previous.Href)">
+                <span class="sp-neighbour-label"><i class="bi bi-arrow-left"></i>Previous</span>
+                <span class="sp-neighbour-title">@Previous.Title</span>
+            </a>
+        }
+        @if (Next is not null)
+        {
+            <a class="sp-neighbour sp-neighbour-next" href="@Navigation.SiteUrl(Next.Href)">
+                <span class="sp-neighbour-label">Next<i class="bi bi-arrow-right"></i></span>
+                <span class="sp-neighbour-title">@Next.Title</span>
+            </a>
+        }
+    </nav>
+}
+
+@code {
+    [Parameter]
+    public NavItem? Previous { get; set; }
+
+    [Parameter]
+    public NavItem? Next { get; set; }
+}

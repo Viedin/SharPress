@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="SharPress.Api/SharPress.Api.csproj" />
-  <Project Path="SharPress.Lib.Tests/SharPress.Lib.Tests.csproj" />
-  <Project Path="SharPress.Lib/SharPress.Lib.csproj" />
+  <Project Path="SharPress.Sample/SharPress.Sample.csproj" />
+  <Project Path="SharPress.Tests/SharPress.Tests.csproj" />
+  <Project Path="SharPress/SharPress.csproj" />
 </Solution>

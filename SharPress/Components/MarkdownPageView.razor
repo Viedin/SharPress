@@ -1,0 +1,51 @@
+@using SharPress.Services
+
+<PageTitle>@(Page?.Title ?? "SharPress")</PageTitle>
+
+<div class="sp-layout">
+    @if (Navigation is { Groups.Count: > 0 })
+    {
+        <aside class="sp-sidebar">
+            <DocsNav SiteTitle="@Navigation.SiteTitle" SiteLogo="@Navigation.SiteLogo" Title="@Navigation.Title" Groups="Navigation.Groups" />
+        </aside>
+    }
+
+    <main class="sp-doc">
+        @if (Page is null)
+        {
+            <p>Page not found.</p>
+        }
+        else
+        {
+            @((MarkupString)Page.Html)
+            <PageNeighbours Previous="Previous" Next="Next" />
+        }
+    </main>
+
+    @if (Page is not null && ShowOutline)
+    {
+        <aside class="sp-aside">
+            <OnThisPage Headings="Page.Headings" />
+        </aside>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public MarkdownPage? Page { get; set; }
+
+    /// <summary>Whether to show the "On this page" outline to the right of the page.</summary>
+    [Parameter]
+    public bool ShowOutline { get; set; } = true;
+
+    /// <summary>Optional navigation shown to the left of the page.</summary>
+    [Parameter]
+    public DocsNavigation? Navigation { get; set; }
+
+    /// <summary>Optional links to the pages before and after this one, shown below the content.</summary>
+    [Parameter]
+    public NavItem? Previous { get; set; }
+
+    [Parameter]
+    public NavItem? Next { get; set; }
+}

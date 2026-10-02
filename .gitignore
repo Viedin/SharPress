@@ -491,4 +491,4 @@ $RECYCLE.BIN/
 local-packages/
 artifacts/
 # The sample's site folder is created on first run from the starter templates
-SharPress.Api/SharpLib/
+SharPress.Sample/SharpLib/
