@@ -492,3 +492,5 @@ local-packages/
 artifacts/
 # The sample's site folder is created on first run from the starter templates
 SharPress.Sample/SharpLib/
+# Local guidance for coding agents
+/AGENTS.md
