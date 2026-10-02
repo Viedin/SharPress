@@ -94,4 +94,10 @@ public sealed class SharPressOptions
     /// the site. Setting it turns on <see cref="RequireAuthorization"/>.
     /// </summary>
     public string? AuthorizationPolicy { get; set; }
+
+    /// <summary>
+    /// Set by <c>AddSharPressContentSource</c>. The home page, docs and settings then don't come from files, so no
+    /// starter files are created; recorded here so startup doesn't have to create the source to find out.
+    /// </summary>
+    internal bool UsesCustomContentSource { get; set; }
 }

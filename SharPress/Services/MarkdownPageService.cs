@@ -61,18 +61,30 @@ public sealed record DocsNavigation(string? SiteTitle, string? SiteLogo, string?
     }
 }
 
+/// <summary>
+/// Sidebar links already warned about. The navigation is built on every request, so without this a broken link
+/// would be logged on every page view. A singleton, unlike <see cref="MarkdownPageService"/>.
+/// </summary>
+internal sealed class MissingLinkWarnings
+{
+    private readonly ConcurrentDictionary<string, byte> _reported = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Returns true the first time it is called for a link.</summary>
+    public bool TryReport(string href) => _reported.TryAdd(href, 0);
+}
+
+/// <summary>
+/// Renders the pages and builds the navigation from the <see cref="ISharPressContentSource"/>. It is scoped, so a
+/// content source can be scoped too, e.g. to use a DbContext.
+/// </summary>
 internal sealed class MarkdownPageService(
+    ISharPressContentSource source,
     SiteFolders folders,
     SiteSettingsService settingsService,
+    MissingLinkWarnings missingLinkWarnings,
     IHostEnvironment environment,
     ILogger<MarkdownPageService> logger)
 {
-    /// <summary>
-    /// Sidebar links already warned about. The navigation is built on every request, so without this a broken
-    /// link would be logged on every page view.
-    /// </summary>
-    private readonly ConcurrentDictionary<string, byte> _reportedMissingLinks = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>Headings outside this level range (e.g. the h1 page title) are left out of the outline.</summary>
     private const int MinOutlineLevel = 2;
     private const int MaxOutlineLevel = 3;
@@ -85,45 +97,38 @@ internal sealed class MarkdownPageService(
         .Build();
 
     /// <summary>
-    /// Reads the home page file and renders it to HTML, with <paramref name="pathBase"/> (the app's path base and
-    /// the base URL) in front of site-root links. Returns null if the file doesn't exist.
+    /// Renders the home page to HTML, with <paramref name="pathBase"/> (the app's path base and the base URL) in
+    /// front of site-root links. Returns null if the site has no home page content.
     /// </summary>
-    public async Task<MarkdownPage?> GetIndexPageAsync(string pathBase, CancellationToken cancellationToken = default)
-    {
-        var path = folders.IndexFile;
-        return File.Exists(path) ? await RenderFileAsync(path, pathBase, cancellationToken) : null;
-    }
+    public async Task<MarkdownPage?> GetIndexPageAsync(string pathBase, CancellationToken cancellationToken = default) =>
+        await source.GetHomePageAsync(cancellationToken) is { } markdown ? Render(markdown, pathBase) : null;
 
     /// <summary>
-    /// Whether the site has a home page: the home page file or a "home" section in the settings. A docs-only site
+    /// Whether the site has a home page: home page content or a "home" section in the settings. A docs-only site
     /// has neither, and its root redirects to the first docs page.
     /// </summary>
-    public bool HasHomePage(SiteSettings settings) => settings.Home is not null || File.Exists(folders.IndexFile);
+    private async Task<bool> HasHomePageAsync(SiteSettings settings, CancellationToken cancellationToken) =>
+        settings.Home is not null || await source.HasHomePageAsync(cancellationToken);
 
     /// <summary>
-    /// Renders a page from the docs folder. The slug is the file path relative to the docs folder without the
-    /// extension (e.g. "getting-started" for docs/getting-started.md), and <paramref name="pathBase"/> (the app's path base
-    /// and the base URL) is put in front of site-root links. Returns null if there is no matching page.
+    /// Renders a docs page. The slug is the page's path under the docs URL (e.g. "getting-started" for
+    /// docs/getting-started.md), and <paramref name="pathBase"/> (the app's path base and the base URL) is put in
+    /// front of site-root links. Returns null if there is no matching page.
     /// </summary>
     public async Task<MarkdownPage?> GetDocsPageAsync(string? slug, string pathBase, CancellationToken cancellationToken = default)
     {
-        var path = FindDocsFile(slug);
-        return path is null ? null : await RenderFileAsync(path, pathBase, cancellationToken);
-    }
-
-    /// <summary>
-    /// Matches the slug against the files that actually exist, so lookups are case-insensitive on every OS
-    /// and the request can never address a path outside the docs folder.
-    /// </summary>
-    private string? FindDocsFile(string? slug)
-    {
         var requested = (slug ?? string.Empty).Trim('/').ToLowerInvariant();
-        return requested.Length == 0 ? null : FindDocsFiles().GetValueOrDefault(requested);
+        if (requested.Length == 0)
+        {
+            return null;
+        }
+
+        return await source.GetDocsPageAsync(requested, cancellationToken) is { } markdown ? Render(markdown, pathBase) : null;
     }
 
     /// <summary>
-    /// Builds the docs navigation from the sidebar in sharpress.json. Without a sidebar, every page in
-    /// the docs folder is listed, sorted by path.
+    /// Builds the docs navigation from the sidebar in the settings. Without a sidebar, every docs page is listed,
+    /// sorted by path.
     /// </summary>
     public async Task<DocsNavigation> GetDocsNavigationAsync(CancellationToken cancellationToken = default)
     {
@@ -137,7 +142,7 @@ internal sealed class MarkdownPageService(
                 .ToList();
             return new DocsNavigation(settings.Title, settings.Logo, settings.SidebarTitle, items.Count == 0 ? [] : [new NavGroup(null, items)])
             {
-                HasHomePage = HasHomePage(settings),
+                HasHomePage = await HasHomePageAsync(settings, cancellationToken),
                 FirstPage = items.FirstOrDefault(),
             };
         }
@@ -167,7 +172,7 @@ internal sealed class MarkdownPageService(
 
         return new DocsNavigation(settings.Title, settings.Logo, settings.SidebarTitle, groups)
         {
-            HasHomePage = HasHomePage(settings),
+            HasHomePage = await HasHomePageAsync(settings, cancellationToken),
             FirstPage = groups
                 .SelectMany(group => group.Items)
                 .FirstOrDefault(item => DocsSlug(item.Href) is { } slug && pageTitles.ContainsKey(slug)),
@@ -208,8 +213,16 @@ internal sealed class MarkdownPageService(
         var isSiteLink = href.StartsWith('/') && !href.StartsWith("//", StringComparison.Ordinal) && href != "/";
         if (!environment.IsDevelopment() || !isSiteLink || (slug is not null && pageTitles.ContainsKey(slug))
             || href.Contains('#') || href.Contains('?') || folders.FindStaticFile(folders.BasePath + href) is not null
-            || !_reportedMissingLinks.TryAdd(href, 0))
+            || !missingLinkWarnings.TryReport(href))
         {
+            return;
+        }
+
+        if (folders.Options.UsesCustomContentSource)
+        {
+            logger.LogWarning(
+                "The sidebar link {Link} doesn't match a docs page from the content source or a file in {StaticFolder}. Docs pages are served under \"{DocsPath}/\" (SharPressOptions.DocsUrl).",
+                href, folders.Options.StaticFolder, folders.DocsPath);
             return;
         }
 
@@ -250,45 +263,34 @@ internal sealed class MarkdownPageService(
         return new NavItem(text, href);
     }
 
-    /// <summary>Maps each docs page slug to its title (the first # heading, or the file name), sorted by slug.</summary>
+    /// <summary>
+    /// Maps each docs page's lower-cased slug to its title (from the source, or the last part of the slug),
+    /// in slug order.
+    /// </summary>
     private async Task<Dictionary<string, string>> GetDocsTitlesAsync(CancellationToken cancellationToken)
     {
         var titles = new Dictionary<string, string>();
+        var pages = (await source.GetDocsPagesAsync(cancellationToken))
+            .Select(page => (Slug: page.Slug.Trim('/').ToLowerInvariant(), page.Title))
+            .Where(page => page.Slug.Length > 0)
+            .OrderBy(page => page.Slug, StringComparer.Ordinal);
 
-        foreach (var (slug, file) in FindDocsFiles())
+        // Filled in sorted order, which a dictionary keeps as long as nothing is removed. TryAdd keeps the
+        // first of two entries that differ only in case.
+        foreach (var (slug, title) in pages)
         {
-            var markdown = await File.ReadAllTextAsync(file, cancellationToken);
-            var h1 = Markdown.Parse(markdown, Pipeline).Descendants<HeadingBlock>().FirstOrDefault(heading => heading.Level == 1);
-            var title = h1 is null ? string.Empty : GetPlainText(h1);
-            titles[slug] = title.Length > 0 ? title : slug[(slug.LastIndexOf('/') + 1)..].Replace('-', ' ');
+            titles.TryAdd(slug, string.IsNullOrWhiteSpace(title) ? slug[(slug.LastIndexOf('/') + 1)..].Replace('-', ' ') : title);
         }
 
         return titles;
     }
 
-    /// <summary>Maps each docs page slug (lower-cased path without extension) to its file, sorted by slug.</summary>
-    private SortedDictionary<string, string> FindDocsFiles()
+    /// <summary>The plain text of the first # heading in the Markdown, or null if there is none.</summary>
+    internal static string? GetTitle(string markdown)
     {
-        var pages = new SortedDictionary<string, string>(StringComparer.Ordinal);
-        var docsPath = folders.Docs;
-        if (!Directory.Exists(docsPath))
-        {
-            return pages;
-        }
-
-        foreach (var file in Directory.EnumerateFiles(docsPath, "*.md", SearchOption.AllDirectories))
-        {
-            var slug = Path.ChangeExtension(Path.GetRelativePath(docsPath, file), null).Replace('\\', '/').ToLowerInvariant();
-            pages[slug] = file;
-        }
-
-        return pages;
-    }
-
-    private static async Task<MarkdownPage> RenderFileAsync(string path, string pathBase, CancellationToken cancellationToken)
-    {
-        var markdown = await File.ReadAllTextAsync(path, cancellationToken);
-        return Render(markdown, pathBase);
+        var h1 = Markdown.Parse(markdown, Pipeline).Descendants<HeadingBlock>().FirstOrDefault(heading => heading.Level == 1);
+        var title = h1 is null ? string.Empty : GetPlainText(h1);
+        return title.Length > 0 ? title : null;
     }
 
     /// <param name="markdown">The Markdown to render.</param>

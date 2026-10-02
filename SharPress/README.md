@@ -9,6 +9,7 @@ build step: edit a file, save, refresh.
 - An optional home page with a hero and feature cards
 - Light and dark themes, custom CSS, a logo and a favicon
 - Works on phones, under any URL, and behind your app's sign-in if you want
+- Pages from files by default, or from your own database or CMS
 
 ## Install
 
@@ -120,6 +121,45 @@ app.Run();
 Links in `sharpress.json` and in your Markdown that start with `/` are relative to the base URL, so
 `"/docs/getting-started"` keeps working. Use a full URL to link to the rest of the app. SharPress's error page
 and HTTPS rules only apply to requests under the base URL.
+
+## Reading content from a database or CMS
+
+By default the pages and settings are files. To keep them somewhere else, implement `ISharPressContentSource`
+and register it:
+
+```csharp
+using SharPress;
+using SharPress.Services;
+
+public sealed class DbContentSource(DocsDbContext db) : ISharPressContentSource
+{
+    public Task<string?> GetHomePageAsync(CancellationToken ct) =>
+        db.Pages.Where(p => p.IsHome).Select(p => p.Markdown).FirstOrDefaultAsync(ct);
+
+    // The slug is lower-cased, e.g. "guide/install" for /docs/Guide/Install.
+    public Task<string?> GetDocsPageAsync(string slug, CancellationToken ct) =>
+        db.Pages.Where(p => p.Slug == slug).Select(p => p.Markdown).FirstOrDefaultAsync(ct);
+
+    // Used for the navigation on every page view, so only load slugs and titles.
+    public async Task<IReadOnlyList<DocsPageEntry>> GetDocsPagesAsync(CancellationToken ct) =>
+        await db.Pages.Where(p => !p.IsHome).Select(p => new DocsPageEntry(p.Slug, p.Title)).ToListAsync(ct);
+
+    // The same settings sharpress.json holds; null uses the defaults.
+    public Task<SiteSettings?> GetSettingsAsync(CancellationToken ct) =>
+        Task.FromResult<SiteSettings?>(new SiteSettings { Title = "Acme Docs" });
+}
+```
+
+```csharp
+builder.AddSharPress();
+builder.AddSharPressContentSource<DbContentSource>();
+```
+
+The source is scoped by default, so it can use a `DbContext`; pass `ServiceLifetime.Singleton` for one that keeps
+its own cache. SharPress calls it on every request and caches nothing, so edits show up on refresh. If reading is
+slow, cache inside the source (for example with `HybridCache`). Docs pages also ask `HasHomePageAsync`, which loads
+the home page by default; override it with a cheaper check if that matters. With a custom source no starter files are
+created. The static folder (`public/`) is still served from disk, so put images there or link them by full URL.
 
 ## Hosting under a sub-path
 

@@ -1,4 +1,5 @@
 using SharPress;
+using SharPress.Sample;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddSharPress(options =>
@@ -16,6 +17,13 @@ builder.AddSharPress(options =>
     // options.RequireAuthorization = false;       // require a signed-in user (register AddAuthentication/AddAuthorization)
     // options.AuthorizationPolicy = null;         // a named policy users must meet; turns on RequireAuthorization
 });
+
+// Read the home page, docs and settings from code instead of SharpLib, the way a database or CMS source would:
+//   dotnet run --project SharPress.Sample -- --ContentSource=Demo
+if (builder.Configuration["ContentSource"] == "Demo")
+{
+    builder.AddSharPressContentSource<DemoContentSource>();
+}
 
 var app = builder.Build();
 app.UseSharPress();

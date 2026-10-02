@@ -27,7 +27,18 @@ internal sealed class TestSite : IAsyncDisposable
 
     public SiteFolders Folders => App.Services.GetRequiredService<SiteFolders>();
 
-    public T GetService<T>() where T : notnull => App.Services.GetRequiredService<T>();
+    private readonly List<AsyncServiceScope> _scopes = [];
+
+    /// <summary>
+    /// Resolves a service in a new scope, like a request would. The page services are scoped, and the settings
+    /// are read once per scope, so call this again after changing a file.
+    /// </summary>
+    public T GetService<T>() where T : notnull
+    {
+        var scope = App.Services.CreateAsyncScope();
+        _scopes.Add(scope);
+        return scope.ServiceProvider.GetRequiredService<T>();
+    }
 
     /// <param name="configure">SharPress options.</param>
     /// <param name="beforeSharPress">Runs before UseSharPress, e.g. to add UsePathBase or a test endpoint.</param>
@@ -72,6 +83,11 @@ internal sealed class TestSite : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        foreach (var scope in _scopes)
+        {
+            await scope.DisposeAsync();
+        }
+
         Client.Dispose();
         await App.DisposeAsync();
         try

@@ -34,7 +34,8 @@ internal static class InitFolderStructure
         var isNewSite = !File.Exists(folders.SettingsFile);
         Directory.CreateDirectory(folders.Root);
 
-        if (folders.Options.CreateStarterFiles)
+        // A custom content source provides the pages and settings, so starter files on disk would never be shown.
+        if (folders.Options.CreateStarterFiles && !folders.Options.UsesCustomContentSource)
         {
             CopyTemplates(folders, isNewSite);
         }

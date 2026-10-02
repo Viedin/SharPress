@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using SharPress.Content;
 using SharPress.Endpoints;
 using SharPress.Services;
 using SharPress.Startup;
@@ -25,10 +27,52 @@ public static class Init
         }
 
         services.AddSingleton<SiteFolders>();
-        services.AddSingleton<SiteSettingsService>();
-        services.AddSingleton<MarkdownPageService>();
+        services.AddSingleton<MissingLinkWarnings>();
+
+        // Scoped, so a content source can be scoped too (e.g. to use a DbContext), and the settings are read once
+        // per request. TryAdd keeps a source registered with AddSharPressContentSource before this call.
+        services.TryAddScoped<ISharPressContentSource, FileContentSource>();
+        services.AddScoped<SiteSettingsService>();
+        services.AddScoped<MarkdownPageService>();
         services.AddRazorComponents();
         return services;
+    }
+
+    /// <summary>
+    /// Reads the home page, the docs pages and the settings from <typeparamref name="TSource"/> instead of the
+    /// files under <see cref="SharPressOptions.RootFolder"/>, for example from a database or a CMS. No starter
+    /// files are created; the static folder is still served from disk. It can be called before or after
+    /// <c>AddSharPress</c>.
+    /// </summary>
+    /// <typeparam name="TSource">The content source.</typeparam>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="lifetime">
+    /// The source's lifetime. Scoped (the default) creates one per request, so it can use scoped services such as
+    /// a DbContext; use Singleton for a source that keeps its own cache.
+    /// </param>
+    public static IServiceCollection AddSharPressContentSource<TSource>(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Scoped)
+        where TSource : class, ISharPressContentSource
+    {
+        services.Replace(ServiceDescriptor.Describe(typeof(ISharPressContentSource), typeof(TSource), lifetime));
+        services.Configure<SharPressOptions>(options => options.UsesCustomContentSource = true);
+        return services;
+    }
+
+    /// <summary>
+    /// Reads the home page, the docs pages and the settings from <typeparamref name="TSource"/> instead of files.
+    /// See <see cref="AddSharPressContentSource{TSource}(IServiceCollection, ServiceLifetime)"/>.
+    /// </summary>
+    /// <typeparam name="TSource">The content source.</typeparam>
+    /// <param name="builder">The application builder.</param>
+    /// <param name="lifetime">
+    /// The source's lifetime. Scoped (the default) creates one per request, so it can use scoped services such as
+    /// a DbContext; use Singleton for a source that keeps its own cache.
+    /// </param>
+    public static WebApplicationBuilder AddSharPressContentSource<TSource>(this WebApplicationBuilder builder, ServiceLifetime lifetime = ServiceLifetime.Scoped)
+        where TSource : class, ISharPressContentSource
+    {
+        builder.Services.AddSharPressContentSource<TSource>(lifetime);
+        return builder;
     }
 
     /// <summary>Registers SharPress services.</summary>
