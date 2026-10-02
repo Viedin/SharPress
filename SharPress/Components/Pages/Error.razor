@@ -1,4 +1,5 @@
-@* The exception handler set up in UseSharPress re-executes failed requests here outside development. *@
+@* Outside development, the exception handler set up in UseSharPress renders this for failed requests
+   (PageEndpoints.RenderErrorAsync). It has no URL of its own. *@
 @using SharPress.Services
 @using SharPress.Startup
 @inject NavigationManager Navigation

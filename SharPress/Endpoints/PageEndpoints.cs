@@ -66,14 +66,17 @@ internal static class PageEndpoints
                 StatusCode = page is null ? StatusCodes.Status404NotFound : null,
             };
         });
-
-        // Map, not MapGet: the exception handler re-executes the failed request with its original method.
-        app.Map($"{folders.BasePath}/Error", IResult (HttpContext context) =>
-            new RazorComponentResult<Error>(new Dictionary<string, object?>
-            {
-                [nameof(Error.RequestId)] = Activity.Current?.Id ?? context.TraceIdentifier,
-            }));
     }
+
+    /// <summary>
+    /// Renders the error page for a failed request. The exception handler calls this directly rather than
+    /// re-executing an /Error route: it runs in a UseWhen branch, where it can't route the request again.
+    /// </summary>
+    public static Task RenderErrorAsync(HttpContext context) =>
+        new RazorComponentResult<Error>(new Dictionary<string, object?>
+        {
+            [nameof(Error.RequestId)] = Activity.Current?.Id ?? context.TraceIdentifier,
+        }).ExecuteAsync(context);
 
     private static readonly FileExtensionContentTypeProvider ContentTypes = new();
 

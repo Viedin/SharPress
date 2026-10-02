@@ -32,8 +32,8 @@ public sealed class SharPressOptions
     /// <para>
     /// Links in the settings file and in your Markdown that start with "/" are relative to this URL, so
     /// "/docs/getting-started" still works after you set it. Link to the app's other pages with a full URL.
-    /// The error page, the static folder and the error handling also move under this URL and leave the rest of
-    /// the app alone.
+    /// The static folder also moves under this URL, and SharPress's error page and HTTPS rules only apply to
+    /// requests under it, leaving the rest of the app alone.
     /// </para>
     /// </summary>
     public string BaseUrl { get; set; } = "";

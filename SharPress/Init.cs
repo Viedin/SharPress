@@ -61,7 +61,11 @@ public static class Init
         {
             if (!app.Environment.IsDevelopment())
             {
-                site.UseExceptionHandler($"{folders.BasePath}/Error", createScopeForErrors: true);
+                site.UseExceptionHandler(new ExceptionHandlerOptions
+                {
+                    ExceptionHandler = PageEndpoints.RenderErrorAsync,
+                    CreateScopeForErrors = true,
+                });
                 site.UseHsts();
             }
 
