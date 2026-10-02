@@ -19,14 +19,29 @@ internal static class PageEndpoints
     // The handlers return IResult because the endpoint code generator can't see the Razor-generated page types.
     public static void Map(WebApplication app, SiteFolders folders)
     {
-        app.MapGet("/", async Task<IResult> (HttpContext context, MarkdownPageService markdown, SiteSettingsService settings, CancellationToken cancellationToken) =>
+        // The pages are grouped so they can share an authorization requirement. The error page isn't in the
+        // group: it has to render for everyone.
+        var pages = app.MapGroup("");
+        if (folders.RequireAuthorization)
+        {
+            if (folders.Options.AuthorizationPolicy is { } policy)
+            {
+                pages.RequireAuthorization(policy);
+            }
+            else
+            {
+                pages.RequireAuthorization();
+            }
+        }
+
+        pages.MapGet("/", async Task<IResult> (HttpContext context, MarkdownPageService markdown, SiteSettingsService settings, CancellationToken cancellationToken) =>
             new RazorComponentResult<Home>(new Dictionary<string, object?>
             {
                 [nameof(Home.Page)] = await markdown.GetIndexPageAsync(PathBase(context), cancellationToken),
                 [nameof(Home.Settings)] = (await settings.GetAsync(cancellationToken)).Home,
             }));
 
-        app.MapGet($"/{folders.DocsUrl}/{{*slug}}", async Task<IResult> (string? slug, HttpContext context, MarkdownPageService markdown, CancellationToken cancellationToken) =>
+        pages.MapGet($"/{folders.DocsUrl}/{{*slug}}", async Task<IResult> (string? slug, HttpContext context, MarkdownPageService markdown, CancellationToken cancellationToken) =>
         {
             // UseStaticFiles skips requests that matched an endpoint, so a file in the static folder under the
             // docs URL (e.g. public/docs/images/diagram.png) would otherwise get "Page not found".
@@ -70,16 +85,7 @@ internal static class PageEndpoints
     /// </summary>
     private static PhysicalFileHttpResult? FindStaticFile(SiteFolders folders, PathString requestPath)
     {
-        var relativePath = requestPath.Value?.TrimStart('/');
-        if (string.IsNullOrEmpty(relativePath))
-        {
-            return null;
-        }
-
-        // The full path must stay inside the static folder, so "../" can't reach other files.
-        var root = Path.TrimEndingDirectorySeparator(folders.Static) + Path.DirectorySeparatorChar;
-        var path = Path.GetFullPath(Path.Combine(root, relativePath));
-        if (!path.StartsWith(root, StringComparison.Ordinal) || !File.Exists(path))
+        if (folders.FindStaticFile(requestPath) is not { } path)
         {
             return null;
         }

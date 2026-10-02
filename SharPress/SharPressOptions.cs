@@ -52,4 +52,24 @@ public sealed class SharPressOptions
     /// folder is created either way, because it has to exist to be served.
     /// </summary>
     public bool CreateStarterFiles { get; set; } = true;
+
+    /// <summary>
+    /// Whether every page needs an authorized user, using the authentication your app already has. It covers the
+    /// home page, the docs pages and the files in <see cref="StaticFolder"/>; the error page and SharPress's own
+    /// stylesheet and script stay public. Users who aren't signed in get your sign-in scheme's challenge, such as
+    /// a redirect to your login page; SharPress doesn't add one. Register authentication and authorization first:
+    /// <code>
+    /// builder.Services.AddAuthentication().AddCookie();
+    /// builder.Services.AddAuthorization();
+    /// builder.AddSharPress(options =&gt; options.RequireAuthorization = true);
+    /// </code>
+    /// Without <see cref="AuthorizationPolicy"/>, your app's default policy is used: any signed-in user.
+    /// </summary>
+    public bool RequireAuthorization { get; set; }
+
+    /// <summary>
+    /// The name of an authorization policy, registered with <c>AddAuthorization</c>, that users must meet to see
+    /// the site. Setting it turns on <see cref="RequireAuthorization"/>.
+    /// </summary>
+    public string? AuthorizationPolicy { get; set; }
 }

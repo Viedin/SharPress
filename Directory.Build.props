@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- The package version, shared so the sample can reference the package it was just packed as.
          Release builds override it with the version from the git tag (see .github/workflows/release.yml). -->
-    <SharPressVersion>0.1.0-preview.2</SharPressVersion>
+    <SharPressVersion>0.1.0-preview.3</SharPressVersion>
   </PropertyGroup>
 
 </Project>

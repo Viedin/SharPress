@@ -12,6 +12,7 @@ API, in the same deployment, with no Node toolchain and no build step: edit a fi
 - A home page with a hero and feature cards
 - Light and dark themes, custom CSS, a logo and a favicon
 - Served under any URL (`/docs`, `/guide`, ...) and under a path base
+- Optionally locked behind your app's existing sign-in
 
 ## Quick start
 

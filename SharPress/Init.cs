@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -44,6 +46,15 @@ public static class Init
         var folders = app.Services.GetRequiredService<SiteFolders>();
         InitFolderStructure.Run(folders);
 
+        if (folders.RequireAuthorization
+            && (app.Services.GetService<IAuthorizationPolicyProvider>() is null || app.Services.GetService<IAuthenticationSchemeProvider>() is null))
+        {
+            // Without this the endpoints would fail on every request with a less helpful message.
+            throw new InvalidOperationException(
+                $"{nameof(SharPressOptions)}.{nameof(SharPressOptions.RequireAuthorization)} uses the app's authentication. " +
+                "Call builder.Services.AddAuthentication(...) and builder.Services.AddAuthorization() before building the app.");
+        }
+
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -55,6 +66,11 @@ public static class Init
         app.MapStaticAssets();
 
         // The user's static folder (custom.css, icons, images) is served from the site root.
+        if (folders.RequireAuthorization)
+        {
+            StaticFileAuthorization.Use(app, folders);
+        }
+
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = new PhysicalFileProvider(folders.Static),

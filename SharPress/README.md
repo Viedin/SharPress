@@ -54,16 +54,41 @@ builder.AddSharPress(options =>
 `DocsUrl` changes the URL only. Links in `sharpress.json` must use the same URL, for example
 `"/guide/getting-started"`.
 
-| Option               | Default          |
-| -------------------- | ---------------- |
-| `RootFolder`         | `SharpLib`       |
-| `DocsFolder`         | `docs`           |
-| `DocsUrl`            | `docs`           |
-| `StaticFolder`       | `public`         |
-| `IndexFile`          | `Index.md`       |
-| `SettingsFile`       | `sharpress.json` |
-| `CustomCssFile`      | `custom.css`     |
-| `CreateStarterFiles` | `true`           |
+| Option                 | Default          |
+| ---------------------- | ---------------- |
+| `RootFolder`           | `SharpLib`       |
+| `DocsFolder`           | `docs`           |
+| `DocsUrl`              | `docs`           |
+| `StaticFolder`         | `public`         |
+| `IndexFile`            | `Index.md`       |
+| `SettingsFile`         | `sharpress.json` |
+| `CustomCssFile`        | `custom.css`     |
+| `CreateStarterFiles`   | `true`           |
+| `RequireAuthorization` | `false`          |
+| `AuthorizationPolicy`  | `null`           |
+
+## Requiring sign-in
+
+To keep the docs private, turn on `RequireAuthorization`. SharPress uses the authentication your app already
+has (cookies, Identity, OpenID Connect, ...), so register it as usual:
+
+```csharp
+builder.Services.AddAuthentication().AddCookie(); // or your existing setup
+builder.Services.AddAuthorization();
+builder.AddSharPress(options => options.RequireAuthorization = true);
+```
+
+Any signed-in user can then read the site (your app's default policy). To limit it further, name a policy;
+setting `AuthorizationPolicy` turns on `RequireAuthorization` by itself:
+
+```csharp
+builder.Services.AddAuthorization(o => o.AddPolicy("DocsReaders", p => p.RequireRole("staff")));
+builder.AddSharPress(options => options.AuthorizationPolicy = "DocsReaders");
+```
+
+The home page, the docs pages and the files in `public/` are locked. The error page and SharPress's own
+stylesheet and script stay public. Visitors who aren't signed in get your sign-in scheme's challenge, for
+example a redirect to your login page; SharPress doesn't add a login page of its own.
 
 ## Hosting under a sub-path
 

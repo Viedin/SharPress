@@ -12,6 +12,8 @@ builder.AddSharPress(options =>
     // options.SettingsFile = "sharpress.json";    // site title, sidebar and home layout
     // options.CustomCssFile = "custom.css";       // inside StaticFolder
     // options.CreateStarterFiles = true;          // create a starter site on first run
+    // options.RequireAuthorization = false;       // require a signed-in user (register AddAuthentication/AddAuthorization)
+    // options.AuthorizationPolicy = null;         // a named policy users must meet; turns on RequireAuthorization
 });
 
 var app = builder.Build();

@@ -32,10 +32,12 @@ internal sealed class TestSite : IAsyncDisposable
     /// <param name="configure">SharPress options.</param>
     /// <param name="beforeSharPress">Runs before UseSharPress, e.g. to add UsePathBase or a test endpoint.</param>
     /// <param name="environment">"Production" turns on the error page.</param>
+    /// <param name="configureBuilder">Runs before the app is built, e.g. to register authentication.</param>
     public static async Task<TestSite> StartAsync(
         Action<SharPressOptions>? configure = null,
         Action<WebApplication>? beforeSharPress = null,
-        string environment = "Development")
+        string environment = "Development",
+        Action<WebApplicationBuilder>? configureBuilder = null)
     {
         var contentRoot = Path.Combine(Path.GetTempPath(), "sharpress-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(contentRoot);
@@ -50,6 +52,7 @@ internal sealed class TestSite : IAsyncDisposable
         });
         builder.WebHost.UseTestServer();
         builder.AddSharPress(configure);
+        configureBuilder?.Invoke(builder);
 
         var app = builder.Build();
         beforeSharPress?.Invoke(app);
