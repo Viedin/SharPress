@@ -1,7 +1,6 @@
 # SharPress
 
-<!-- TODO: replace OWNER with the GitHub user or organization once the repository exists. -->
-[![CI](https://github.com/OWNER/SharPress/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/SharPress/actions/workflows/ci.yml)
+[![CI](https://github.com/Viedin/SharPress/actions/workflows/ci.yml/badge.svg)](https://github.com/Viedin/SharPress/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/vpre/SharPress.Lib)](https://www.nuget.org/packages/SharPress.Lib)
 
 Turn a folder of Markdown files into a documentation site inside your ASP.NET Core app. Docs live next to your

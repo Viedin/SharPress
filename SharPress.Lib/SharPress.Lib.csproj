@@ -21,9 +21,8 @@
     <PackageTags>markdown;documentation;docs;docs-site;aspnetcore</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <!-- TODO: replace OWNER with the GitHub user or organization once the repository exists. -->
-    <PackageProjectUrl>https://github.com/OWNER/SharPress</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/OWNER/SharPress</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Viedin/SharPress</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Viedin/SharPress</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
 
     <!-- Ship symbols with the package so consumers can step into the library, and XML docs for IntelliSense. -->
