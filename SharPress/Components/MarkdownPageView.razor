@@ -2,10 +2,21 @@
 
 <PageTitle>@(Page?.Title ?? "SharPress")</PageTitle>
 
+@if (Navigation is { Groups.Count: > 0 })
+{
+    @* Only shown on narrow screens, where the sidebar becomes a drawer opened from here (sharpress.js). *@
+    <div class="sp-topbar">
+        <button class="sp-menu-toggle" type="button" aria-controls="sp-sidebar" aria-expanded="false">
+            <i class="bi bi-list"></i> Menu
+        </button>
+    </div>
+    <div class="sp-backdrop"></div>
+}
+
 <div class="sp-layout">
     @if (Navigation is { Groups.Count: > 0 })
     {
-        <aside class="sp-sidebar">
+        <aside class="sp-sidebar" id="sp-sidebar">
             <DocsNav SiteTitle="@Navigation.SiteTitle" SiteLogo="@Navigation.SiteLogo" Title="@Navigation.Title" Groups="Navigation.Groups" />
         </aside>
     }

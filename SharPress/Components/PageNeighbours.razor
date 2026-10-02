@@ -7,15 +7,15 @@
         @if (Previous is not null)
         {
             <a class="sp-neighbour sp-neighbour-previous" href="@Navigation.SiteUrl(Previous.Href)">
-                <span class="sp-neighbour-label"><i class="bi bi-arrow-left"></i>Previous</span>
-                <span class="sp-neighbour-title">@Previous.Title</span>
+                <span class="sp-neighbour-label">Previous</span>
+                <span class="sp-neighbour-title"><i class="bi bi-arrow-left"></i>@Previous.Title</span>
             </a>
         }
         @if (Next is not null)
         {
             <a class="sp-neighbour sp-neighbour-next" href="@Navigation.SiteUrl(Next.Href)">
-                <span class="sp-neighbour-label">Next<i class="bi bi-arrow-right"></i></span>
-                <span class="sp-neighbour-title">@Next.Title</span>
+                <span class="sp-neighbour-label">Next</span>
+                <span class="sp-neighbour-title">@Next.Title<i class="bi bi-arrow-right"></i></span>
             </a>
         }
     </nav>
