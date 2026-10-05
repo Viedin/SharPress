@@ -33,10 +33,12 @@
         }
     </main>
 
-    @if (Page is not null && ShowOutline)
+    @* Rendered even when there is no outline ("Page not found", pages without headings), so the page stays in
+       the same place as on other docs pages instead of shifting right. *@
+    @if (ShowOutline)
     {
         <aside class="sp-aside">
-            <OnThisPage Headings="Page.Headings" />
+            <OnThisPage Headings="@(Page?.Headings ?? [])" />
         </aside>
     }
 </div>

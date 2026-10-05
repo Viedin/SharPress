@@ -99,9 +99,12 @@ body {
     .sp-layout:has(> .sp-sidebar) { min-height: 100vh; }
 }
 
+/* Border-box so the padding counts towards the 100vh. Otherwise the bottom of the list sits below the window
+   and only comes into view when the page reaches its end and pushes the sticky element up. */
 .sp-nav {
     position: sticky;
     top: 0;
+    box-sizing: border-box;
     max-height: 100vh;
     overflow-y: auto;
     padding: 48px 16px 24px 0;
@@ -165,6 +168,7 @@ body {
 .sp-toc {
     position: sticky;
     top: 0;
+    box-sizing: border-box;
     max-height: 100vh;
     overflow-y: auto;
     padding: 48px 0 24px 16px;
